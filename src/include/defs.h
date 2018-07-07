@@ -27,6 +27,10 @@
 #define MAX_DOMAIN_LEN 63
 #endif
 
+#ifndef MAX_USERNAME_LEN
+#define MAX_USERNAME_LEN 32
+#endif
+
 #ifndef CONFIG_DEFINED
 typedef struct{
   int xor_key;
@@ -34,4 +38,22 @@ typedef struct{
   int host_port;
 } config;
 #define CONFIG_DEFINED
+#endif
+
+#ifndef PACKET_SHELL_REVERSE_TCP_DEFINED
+typedef struct{
+  config header;
+  int shell_type;
+  int shell_async;
+} packet_shell_reverse_tcp;
+#define PACKET_SHELL_REVERSE_TCP_DEFINED
+#endif
+
+#ifndef PACKET_CALLBACK_DEFINED
+typedef struct{
+  config header;
+  char username[MAX_USERNAME_LEN];
+  int command;
+} packet_callback;
+#define PACKET_CALLBACK_DEFINED
 #endif
