@@ -3,7 +3,7 @@
 # Swamp RAT
 
 <p align="center">
-  <a href="https://www.youtube.com/watch?v=JYyw4ODRndI">
+  <a target="_blank" href="https://www.youtube.com/watch?v=JYyw4ODRndI">
     <img src="https://github.com/lillypad/swamp-rat/raw/master/img/swamp-rat.gif" alt="Swamp RAT"/>
   </a>
 </p>
