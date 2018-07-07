@@ -28,9 +28,11 @@ void help_menu(){
          "    [-H][--host]   server host\n"
          "    [-p][--port]   server port\n"
          "  [-s][--stub]     write stub file\n"
-         "    [-c][--config] config file"
+         "    [-i][--input]  input config file"
+         "  [-l][--listen]   listener\n"
+         "    [-p][--port]   listener port\n"
          "swamp-rat -x 10 -H 127.0.0.1 -p 80 -c config.bin\n"
-         "swamp-rat -s stub -s config.bin\n");
+         "swamp-rat -s stub -i config.bin\n");
 }
 
 int main(int argc, char **argv){
