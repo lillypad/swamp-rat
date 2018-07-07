@@ -1,4 +1,19 @@
-// Swamp RAT Stub Defines
+/*-----------------------------------------------------------------------\
+| Copyright (C) 2018  Lilly Chalupowski                                  |
+|                                                                        |
+| This program is free software: you can redistribute it and/or modify   |
+| it under the terms of the GNU General Public License as published by   |
+| the Free Software Foundation, either version 3 of the License, or      |
+| (at your option) any later version.                                    |
+|                                                                        |
+| This program is distributed in the hope that it will be useful,        |
+| but WITHOUT ANY WARRANTY; without even the implied warranty of         |
+| MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the          |
+| GNU General Public License for more details.                           |
+|                                                                        |
+| You should have received a copy of the GNU General Public License      |
+| along with this program.  If not, see <https://www.gnu.org/licenses/>. |
+\-----------------------------------------------------------------------*/
 
 #ifndef TCP_PORT_MAX
 #define TCP_PORT_MAX 65535
@@ -11,11 +26,6 @@
 #ifndef MAX_DOMAIN_LEN
 #define MAX_DOMAIN_LEN 63
 #endif
-
-/* #ifndef BOOL_DEFINED */
-/* typedef enum{false, true} bool; */
-/* #define BOOL_DEFINED */
-/* #endif */
 
 #ifndef CONFIG_DEFINED
 typedef struct{
