@@ -3,7 +3,7 @@
 # Swamp RAT
 
 <p align="center">
-  <img src="https://github.com/lillypad/chrome-crusader/raw/master/img/swamp-rat.gif" alt="Swamp RAT"/>
+  <img src="https://github.com/lillypad/swamp-rat/raw/master/img/swamp-rat.gif" alt="Swamp RAT"/>
 </p>
 
 
