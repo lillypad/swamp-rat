@@ -1,3 +1,5 @@
+[![License: GPL v3](https://img.shields.io/badge/License-GPL%20v3-blue.svg)](https://github.com/lillypad/swamp-rat/blob/master/LICENSE)
+
 # Swamp RAT
 
 A `linux` RAT that lurks where others do not.
@@ -18,5 +20,6 @@ sudo make install
 # TODO
 - Communication Protocol
 - Keylogging
+- Webcam Snapshot
 - AntiVM
 - RE Evasion
