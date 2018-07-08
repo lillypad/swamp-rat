@@ -32,24 +32,36 @@ char *sys_get_user(){
   return username;
 }
 
-char *sys_get_os(){
-  /*
-    :TODO: get system name
-    :returns: system name
-  */
-  struct utsname p_utsname;
-  uname(&p_utsname);
-  char *sysname = p_utsname.sysname;
-  return sysname;
+
+#ifndef SYS_UNAME_DEFINED
+#define SYS_UNAME_SYSNAME    0
+#define SYS_UNAME_NODENAME   1
+#define SYS_UNAME_RELEASE    2
+#define SYS_UNAME_VERSION    3
+#define SYS_UNAME_MACHINE    4
+#define SYS_UNAME_DOMAINNAME 5
+#define SYS_UNAME_DEFINED
+#endif
+
+struct utsname *sys_uname_create(){
+  struct utsname *p_uname = malloc(sizeof(struct utsname));
+  uname(p_uname);
+  return p_uname;
 }
 
-char *sys_get_release(){
-  /*
-    :TODO: get system release
-    :returns: system release
-  */
-  struct utsname p_utsname;
-  uname(&p_utsname);
-  char *release = p_utsname.release;
-  return release;
+char *sys_uname(int sys_uname_type){
+  struct utsname *p_uname = sys_uname_create();
+  switch(sys_uname_type){
+  case SYS_UNAME_SYSNAME:
+    return p_uname->sysname;
+  case SYS_UNAME_NODENAME:
+    return p_uname->nodename;
+  case SYS_UNAME_RELEASE:
+    return p_uname->release;
+  case SYS_UNAME_VERSION:
+    return p_uname->version;
+  case SYS_UNAME_MACHINE:
+    return p_uname->machine;
+  }
+  return NULL;
 }

