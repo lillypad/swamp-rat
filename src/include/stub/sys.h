@@ -19,6 +19,7 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <string.h>
+#include <fcntl.h>
 #include <sys/utsname.h>
 #include "../defs.h"
 
@@ -39,7 +40,6 @@ char *sys_get_user(){
 #define SYS_UNAME_RELEASE    2
 #define SYS_UNAME_VERSION    3
 #define SYS_UNAME_MACHINE    4
-#define SYS_UNAME_DOMAINNAME 5
 #define SYS_UNAME_DEFINED
 #endif
 
@@ -64,4 +64,24 @@ char *sys_uname(int sys_uname_type){
     return p_uname->machine;
   }
   return NULL;
+}
+
+int sys_load_average(){
+  /*
+    :TODO: get system load average
+    :returns: (int) load average
+  */
+  char loadavg[1024];
+  float load_average;
+  int loadavg_fd = open("/proc/loadavg", O_RDONLY);
+  if (loadavg_fd < 0){
+    fprintf(stderr, "error: error reading load average\n");
+    return -1;
+  } else{
+    read(loadavg_fd, loadavg, sizeof(loadavg) - 1);
+    sscanf(loadavg, "%f", &load_average);
+    close(loadavg_fd);
+    return (int)(load_average * 100);
+    return load_average;
+  }
 }

