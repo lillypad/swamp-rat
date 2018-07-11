@@ -43,13 +43,32 @@ char *sys_get_user(){
 #define SYS_UNAME_DEFINED
 #endif
 
+#ifndef SYS_SYSINFO
+typedef struct{
+  char ip[MAX_DOMAIN_LEN];
+  char username[MAX_USERNAME_LEN];
+  char architechure[25];
+  float load_average;
+} sys_sysinfo_t;
+#define SYS_SYSINFO
+#endif
+
 struct utsname *sys_uname_create(){
+  /*
+    :TODO: get system username;
+    ;returns: (char *) sytem username
+  */
   struct utsname *p_uname = malloc(sizeof(struct utsname));
   uname(p_uname);
   return p_uname;
 }
 
 char *sys_uname(int sys_uname_type){
+  /*
+    :TODO: get uname data;
+    :sys_uname_type: (int) preprocessor defined uname options
+    :returns: (char *) uname data;
+  */
   struct utsname *p_uname = sys_uname_create();
   switch(sys_uname_type){
   case SYS_UNAME_SYSNAME:
@@ -85,3 +104,5 @@ int sys_load_average(){
     return load_average;
   }
 }
+
+
