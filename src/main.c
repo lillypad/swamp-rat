@@ -18,6 +18,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdbool.h>
+#include "include/main/net.h"
 #include "include/main/config.h"
 
 void help_menu(){
@@ -36,29 +37,30 @@ void help_menu(){
 }
 
 int main(int argc, char **argv){
-  char *host = "127.0.0.1";
-  int host_port = 80;
-  char *config_path = "config.bin";
-  int xor_key = 10;
-  if (argc == 2){
-    if (strcmp(argv[1], "-h") == 0 || strcmp(argv[1], "--help") == 0){
-      help_menu();
-      return EXIT_SUCCESS;
-    }
-  }
-  for (int i = 1; i < argc; i++){
-    if (strcmp(argv[i], "-c") == 0 || strcmp(argv[i], "--config")){
-      config_path = argv[i+1];
-      config_write(config_path, host, host_port, xor_key);
-      return EXIT_SUCCESS;
-    }
-  }
-  for (int i = 1; i < argc; i++){
-    if (strcmp(argv[i], "-s") == 0 || strcmp(argv[i], "--stub") == 0){
-      return EXIT_SUCCESS;
-    }
-  }
-  fprintf(stderr, "error: not enough arguments\n");
-  help_menu();
+  /* char *host = "127.0.0.1"; */
+  /* int host_port = 80; */
+  /* char *config_path = "config.bin"; */
+  /* int xor_key = 10; */
+  /* if (argc == 2){ */
+  /*   if (strcmp(argv[1], "-h") == 0 || strcmp(argv[1], "--help") == 0){ */
+  /*     help_menu(); */
+  /*     return EXIT_SUCCESS; */
+  /*   } */
+  /* } */
+  /* for (int i = 1; i < argc; i++){ */
+  /*   if (strcmp(argv[i], "-c") == 0 || strcmp(argv[i], "--config")){ */
+  /*     config_path = argv[i+1]; */
+  /*     config_write(config_path, host, host_port, xor_key); */
+  /*     return EXIT_SUCCESS; */
+  /*   } */
+  /* } */
+  /* for (int i = 1; i < argc; i++){ */
+  /*   if (strcmp(argv[i], "-s") == 0 || strcmp(argv[i], "--stub") == 0){ */
+  /*     return EXIT_SUCCESS; */
+  /*   } */
+  /* } */
+  /* fprintf(stderr, "error: not enough arguments\n"); */
+  //help_menu();
+  net_start_server(4444);
   return EXIT_FAILURE;
 }

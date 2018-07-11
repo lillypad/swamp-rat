@@ -50,40 +50,70 @@ typedef struct{
 #define NET_PACKET_CMD_REVERSE_TCP
 #endif
 
+#ifndef NET_START_SERVER_ARGS
+typedef struct{
+  int port;
+} net_start_server_args_t;
+#define NET_START_SERVER_ARGS
+#endif
+
 bool net_start_server(int port){
+  /*
+    :TODO: start listening server
+    :port: (int) server listening port
+    :returns: (bool)
+  */
   if (port < TCP_PORT_MIN || port > TCP_PORT_MAX){
     fprintf(stderr, "error: server port is invalid\n");
     return false;
   }
-  char data_client[NET_PACKET_MAX_SIZE];
-  int sock_fd, sockaddr_in_size, read_size;
+  int server_fd, client_fd, err;
   struct sockaddr_in server, client;
-  sock_fd = socket(AF_INET, SOCK_STREAM, 0);
-  if (sock_fd < 0){
-    fprintf(stderr, "error: server could not create socket\n");
+  char data[NET_PACKET_MAX_SIZE];
+
+  server_fd = socket(AF_INET, SOCK_STREAM, 0);
+  if (server_fd < 0){
+    fprintf(stderr, "error: server error creating socket\n");
     return false;
   }
   server.sin_family = AF_INET;
-  server.sin_addr.s_addr = INADDR_ANY;
   server.sin_port = htons(port);
-  if (bind(sock_fd, (struct sockaddr *)&server, sizeof(server))){
-    fprintf(stderr, "error: server failed to bind to socket\n");
+  server.sin_addr.s_addr = htonl(INADDR_ANY);
+  int opt_val = 1;
+  setsockopt(server_fd, SOL_SOCKET, SO_REUSEADDR, &opt_val, sizeof opt_val);
+  err = bind(server_fd, (struct sockaddr *) &server, sizeof(server));
+  if (err < 0){
+    fprintf(stderr, "error: bind to socket failed\n");
     return false;
   }
-  if (listen(sock_fd, NET_BACKLOG_COUNT) < 0){
-    fprintf(stderr, "error: server failed to listen on socket\n");
+  err = listen(server_fd, 128);
+  if (err < 0){
+    fprintf(stderr, "error: listen to socket failed\n");
     return false;
   }
-  int sock_client = accept(sock_fd, (struct sockaddr *)&client, (socklen_t*)&sockaddr_in_size);
-  if (sock_client < 0){
-    fprintf(stderr, "error: server failed to accept client request\n");
-    return false;
+  while (true){
+    socklen_t client_len = sizeof(client);
+    client_fd = accept(server_fd, (struct sockaddr *) &client, &client_len);
+
+    if (client_fd < 0){
+      fprintf(stderr, "error: failed to connect to client\n");
+      return false;
+    }
+
+    while (true){
+      int read = recv(client_fd, data, NET_PACKET_MAX_SIZE, 0);
+      if (!read){
+        break;
+      }
+      if (read < 0){
+        fprintf(stderr, "error: client read failed\n");
+        return false;
+      }
+      err = send(client_fd, data, read, 0);
+      if (err < 0){
+        fprintf(stderr, "error: client write failed\n");
+        return false;
+      }
+    }
   }
-  while( (read_size = recv(sock_client, data_client, NET_PACKET_MAX_SIZE, 0)) < 0){
-    write(sock_client , data_client , strlen(data_client));
-  }
-  if (read_size == 0){
-    return true;
-  }
-  return true;
 }
