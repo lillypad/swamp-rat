@@ -94,12 +94,10 @@ bool net_start_server(int port){
   while (true){
     socklen_t client_len = sizeof(client);
     client_fd = accept(server_fd, (struct sockaddr *) &client, &client_len);
-
     if (client_fd < 0){
       fprintf(stderr, "error: failed to connect to client\n");
       return false;
     }
-
     while (true){
       int read = recv(client_fd, data, NET_PACKET_MAX_SIZE, 0);
       if (!read){
