@@ -64,54 +64,71 @@ bool net_start_server(int port){
     :returns: (bool)
   */
   if (port < TCP_PORT_MIN || port > TCP_PORT_MAX){
-    fprintf(stderr, "error: server port is invalid\n");
+    fprintf(stderr, "[-] server port is invalid\n");
     return false;
   }
+
   int server_fd, client_fd, err;
   struct sockaddr_in server, client;
   char data[NET_PACKET_MAX_SIZE];
+  pid_t child_pid;
 
+  // setup socket
   server_fd = socket(AF_INET, SOCK_STREAM, 0);
   if (server_fd < 0){
-    fprintf(stderr, "error: server error creating socket\n");
+    fprintf(stderr, "[-] server error creating socket\n");
     return false;
   }
   server.sin_family = AF_INET;
   server.sin_port = htons(port);
   server.sin_addr.s_addr = htonl(INADDR_ANY);
-  int opt_val = 1;
-  setsockopt(server_fd, SOL_SOCKET, SO_REUSEADDR, &opt_val, sizeof opt_val);
+  //int opt_val = 1;
+  //setsockopt(server_fd, SOL_SOCKET, SO_REUSEADDR, &opt_val, sizeof opt_val);
+
+  // bind to socket
   err = bind(server_fd, (struct sockaddr *) &server, sizeof(server));
   if (err < 0){
-    fprintf(stderr, "error: bind to socket failed\n");
+    fprintf(stderr, "[-] bind to socket failed\n");
     return false;
   }
-  err = listen(server_fd, 128);
-  if (err < 0){
-    fprintf(stderr, "error: listen to socket failed\n");
-    return false;
+
+  printf("[+] bind to port %d\n", ntohs(server.sin_port));
+
+  // listener
+  if (listen(server_fd, 128)  == 0){
+    printf("[+] listening...\n");
+  } else{
+    fprintf(stderr, "[-] listen to socket failed\n");
   }
+  
   while (true){
+    // accept client connection
     socklen_t client_len = sizeof(client);
     client_fd = accept(server_fd, (struct sockaddr *) &client, &client_len);
     if (client_fd < 0){
-      fprintf(stderr, "error: failed to connect to client\n");
+      printf("[+] %s:%d disconnected\n", inet_ntoa(client.sin_addr), ntohs(client.sin_port));
       return false;
+    } else{
+      printf("[+] %s:%d connected\n", inet_ntoa(client.sin_addr), ntohs(client.sin_port));
     }
-    while (true){
-      int read = recv(client_fd, data, NET_PACKET_MAX_SIZE, 0);
-      if (!read){
-        break;
-      }
-      if (read < 0){
-        fprintf(stderr, "error: client read failed\n");
-        return false;
-      }
-      err = send(client_fd, data, read, 0);
-      if (err < 0){
-        fprintf(stderr, "error: client write failed\n");
-        return false;
+    if ((child_pid = fork()) == 0){
+      while (true){
+        close(server_fd);
+        int read = recv(client_fd, data, NET_PACKET_MAX_SIZE, 0);
+        if (!read){
+          break;
+        }
+        if (read < 0){
+          fprintf(stderr, "[-] client read failed\n");
+          return false;
+        }
+        err = send(client_fd, data, read, 0);
+        if (err < 0){
+          fprintf(stderr, "[-] client write failed\n");
+          return false;
+        }
       }
     }
   }
+  close(client_fd);
 }
