@@ -17,11 +17,76 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <sys/socket.h>
+#include <arpa/inet.h>
+#include <netdb.h>
 #include <unistd.h>
 #include <string.h>
+#include <stdbool.h>
 #include <fcntl.h>
 #include <sys/utsname.h>
 #include "../defs.h"
+
+int hostname_to_ip(char *host, char* ip){
+  struct hostent *he;
+  struct in_addr **addr_list;
+  int i;
+  if ((he = gethostbyname(host)) == NULL){
+    herror("gethostbyname");
+    return 1;
+  }
+  addr_list = (struct in_addr **) he->h_addr_list;
+  for(i = 0; addr_list[i] != NULL; i++){
+    strcpy(ip , inet_ntoa(*addr_list[i]));
+    return 0;
+  }
+  return 1;
+}
+
+bool sys_public_ip(char *public_ip){
+  int sock_fd, port;
+  struct sockaddr_in server;
+  char ip[MAX_DOMAIN_LEN];
+  char *domain;
+  char *request;
+
+  port = 80;
+  domain = "icanhazip.com";
+  hostname_to_ip(domain, ip);
+  request = "GET / HTTP/1.1\r\nHost: icanhazip.com\r\n\r\n";
+
+  memset(&server, 0, sizeof(server));
+  server.sin_family      = AF_INET;
+  server.sin_addr.s_addr = inet_addr(ip);
+  server.sin_port        = htons(port);
+
+  if ((sock_fd = socket(AF_INET, SOCK_STREAM, 0)) < 0){
+    fprintf(stderr, "[x] failed to create socket\n");
+    return false;
+  } else{
+    printf("[+] created socket\n");
+  }
+
+  if (connect(sock_fd, (struct sockaddr *)&server, sizeof(server)) < 0){
+    fprintf(stderr, "[x] failed to connect to icanhazip.com\n");
+    return false;
+  } else{
+    printf("[+] connected to icanhazip.com\n");
+  }
+
+  if (recv(sock_fd, public_ip, MAX_DOMAIN_LEN, 0) < 0){
+    fprintf(stderr, "[x] failed to receive public ip data");
+    return false;
+  } else{
+    printf("[+] received public ip data\n");
+  }
+
+  printf("Public IP is: %s", public_ip);
+
+  close(sock_fd);
+  
+  return true;
+}
 
 char *sys_get_user(){
   /*

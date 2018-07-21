@@ -24,6 +24,7 @@
 #include <string.h>
 #include "../defs.h"
 #include "../stub/shell.h"
+#include "../stub/sys.h"
 
 #ifndef NET_BACKLOG_COUNT
 #define NET_BACKLOG_COUNT 4
@@ -43,6 +44,7 @@
 typedef struct{
   int xor_key;
   int command;
+  sys_sysinfo_t sysinfo;
 } net_packet_beacon_t;
 #define NET_PACKET_BEACON 0
 #endif
