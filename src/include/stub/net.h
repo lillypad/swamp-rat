@@ -23,19 +23,6 @@
 #include <string.h>
 #include <unistd.h>
 #include "../net.h"
-#include "sys.h"
-
-#ifndef NET_CLIENT_SLEEP
-#define NET_CLIENT_SLEEP 5
-#endif
-
-#ifndef NET_CLIENT_BEACON
-typedef struct{
-  int xor_key;
-  sys_info_t sysinfo;
-} net_client_beacon_t;
-#define NET_CLIENT_BEACON
-#endif
 
 bool net_client(char *host, int port){
   /*

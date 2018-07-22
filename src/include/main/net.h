@@ -23,14 +23,6 @@
 #include <stdbool.h>
 #include <string.h>
 #include "../net.h"
-#include "../defs.h"
-
-#ifndef NET_START_SERVER_ARGS
-typedef struct{
-  int port;
-} net_start_server_args_t;
-#define NET_START_SERVER_ARGS
-#endif
 
 bool net_start_server(int port){
   /*
@@ -38,14 +30,15 @@ bool net_start_server(int port){
     :port: (int) server listening port
     :returns: (bool)
   */
+  char data[] = "hello";
   if (port < NET_PORT_MIN || port > NET_PORT_MAX){
-    fprintf(stderr, "[-] server port is invalid\n");
+    fprintf(stderr, "[x] server port is invalid\n");
     return false;
   }
 
   int server_fd, client_fd, err;
   struct sockaddr_in server, client;
-  char data[NET_MAX_RESPONSE_SIZE];
+  //char data[NET_MAX_RESPONSE_SIZE];
   pid_t child_pid;
 
   // setup socket
@@ -54,8 +47,13 @@ bool net_start_server(int port){
     fprintf(stderr, "[-] server error creating socket\n");
     return false;
   }
-  server.sin_family = AF_INET;
-  server.sin_port = htons(port);
+
+  
+
+  // set server properties
+  memset(&server, 0, sizeof(server));
+  server.sin_family      = AF_INET;
+  server.sin_port        = htons(port);
   server.sin_addr.s_addr = htonl(INADDR_ANY);
 
   // bind to socket
@@ -85,19 +83,27 @@ bool net_start_server(int port){
       printf("[+] %s:%d connected\n", inet_ntoa(client.sin_addr), ntohs(client.sin_port));
     }
     if ((child_pid = fork()) == 0){
+      net_client_beacon_t *p_net_client_beacon = malloc(sizeof(net_client_beacon_t));
       while (true){
         close(server_fd);
-        int read = recv(client_fd, data, NET_MAX_RESPONSE_SIZE, 0);
+        int read = recv(client_fd, p_net_client_beacon, sizeof(net_client_beacon_t), 0);
         if (!read){
           break;
         }
         if (read < 0){
-          fprintf(stderr, "[-] client read failed\n");
+          fprintf(stderr, "[-] %s:%d read failed\n", inet_ntoa(client.sin_addr), ntohs(client.sin_port));
           return false;
         }
-        err = send(client_fd, data, read, 0);
-        if (err < 0){
-          fprintf(stderr, "[-] client write failed\n");
+        printf("[+] user:%s@%s, hostname:%s, arch:%s, release:%s, load:%d\n",
+               p_net_client_beacon->sysinfo.username,
+               p_net_client_beacon->sysinfo.ip,
+               p_net_client_beacon->sysinfo.hostname,
+               p_net_client_beacon->sysinfo.arch,
+               p_net_client_beacon->sysinfo.release,
+               p_net_client_beacon->sysinfo.cpu_usage);
+        fflush(stdout);
+        if (send(client_fd, data, sizeof(data), 0) < 0){
+          fprintf(stderr, "[-] send data to client failed!\n");
           return false;
         }
       }
