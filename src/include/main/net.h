@@ -44,7 +44,7 @@
 typedef struct{
   int xor_key;
   int command;
-  sys_sysinfo_t sysinfo;
+  sys_info_t sys_info;
 } net_packet_beacon_t;
 #define NET_PACKET_BEACON 0
 #endif

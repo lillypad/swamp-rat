@@ -17,32 +17,15 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <sys/socket.h>
-#include <arpa/inet.h>
 #include <netdb.h>
 #include <unistd.h>
+#include <arpa/inet.h>
 #include <string.h>
 #include <stdbool.h>
 #include <curl/curl.h>
 #include <fcntl.h>
 #include <sys/utsname.h>
 #include "../defs.h"
-
-#ifndef SYS_INFO
-#define SYS_MAX_SYSNAME_LEN 32
-#define SYS_MAX_MACHINE_LEN 32
-#define SYS_MAX_RELEASE_LEN 64
-typedef struct{
-  char ip[MAX_DOMAIN_LEN];
-  char username[MAX_USERNAME_LEN];
-  char nodename[MAX_DOMAIN_LEN];
-  char sysname[SYS_MAX_SYSNAME_LEN];
-  char release[SYS_MAX_RELEASE_LEN];
-  char machine[SYS_MAX_MACHINE_LEN];
-  int cpu_usage;
-} sys_info_t;
-#define SYS_INFO
-#endif
 
 struct sys_memory_t {
   char *memory;
@@ -75,6 +58,10 @@ static size_t sys_curl_memory_callback(void *contents,
   return realsize;
 }
 
+
+#ifndef SYS_PUBLIC_IP_SIZE
+#define SYS_PUBLIC_IP_SIZE 15
+#endif
 bool sys_public_ip(char *public_ip, size_t public_ip_size){
   /*
     :TODO: get public ip address
@@ -145,67 +132,82 @@ bool sys_host2ip(char *host, char* ip, size_t ip_size){
   return false;
 }
 
-char *sys_username(){
+#ifndef SYS_USERNAME_SIZE
+#define SYS_USERNAME_SIZE 32
+#endif
+bool sys_username(char *username, size_t username_size){
   /*
     :TODO: get current username
     :username: pointer to store username
     :returns: boolean
   */
-  char *username = malloc(MAX_USERNAME_LEN);
+  if (username_size > MAX_USERNAME_LEN){
+    fprintf(stderr, "[x] username length too long!\n");
+    return false;
+  }
   getlogin_r(username, MAX_USERNAME_LEN);
-  return username;
+  return true;
 }
 
-
-#ifndef SYS_UNAME_DEFINED
-#define SYS_UNAME_SYSNAME    0
-#define SYS_UNAME_NODENAME   1
-#define SYS_UNAME_RELEASE    2
-#define SYS_UNAME_VERSION    3
-#define SYS_UNAME_MACHINE    4
-#define SYS_UNAME_DEFINED
+#ifndef SYS_ARCH_SIZE
+#define SYS_ARCH_SIZE 32
 #endif
-
-#ifndef SYS_SYSINFO
-typedef struct{
-  char ip[MAX_DOMAIN_LEN];
-  char username[MAX_USERNAME_LEN];
-  char architechure[25];
-  float load_average;
-} sys_sysinfo_t;
-#define SYS_SYSINFO
-#endif
-
-struct utsname *sys_uname_create(){
+bool sys_arch(char *arch, size_t arch_size){
   /*
-    :TODO: get system username;
-    ;returns: (char *) sytem username
+    :TODO: collect system architechure
+    :arch: pointer to store architechure
+    :arch_size: size of bytes to write
+    :returns: boolean
   */
   struct utsname *p_uname = malloc(sizeof(struct utsname));
-  uname(p_uname);
-  return p_uname;
+  if (uname(p_uname) < 0){
+    fprintf(stderr, "[x] failed to execute uname\n");
+    return false;
+  }
+  strncpy(arch, p_uname->machine, arch_size);
+  free(p_uname);
+  return true;
 }
 
-char *sys_uname(int sys_uname_type){
+
+#ifndef SYS_RELEASE_SIZE
+#define SYS_RELEASE_SIZE 48
+#endif
+bool sys_release(char *release, size_t release_size){
   /*
-    :TODO: get uname data;
-    :sys_uname_type: (int) preprocessor defined uname options
-    :returns: (char *) uname data;
+    :TODO: collect release
+    :release: pointer to store system release
+    :release_size: size of bytes to write
+    :returns: boolean
   */
-  struct utsname *p_uname = sys_uname_create();
-  switch(sys_uname_type){
-  case SYS_UNAME_SYSNAME:
-    return p_uname->sysname;
-  case SYS_UNAME_NODENAME:
-    return p_uname->nodename;
-  case SYS_UNAME_RELEASE:
-    return p_uname->release;
-  case SYS_UNAME_VERSION:
-    return p_uname->version;
-  case SYS_UNAME_MACHINE:
-    return p_uname->machine;
+  struct utsname *p_uname = malloc(sizeof(struct utsname));
+  if (uname(p_uname) < 0){
+    fprintf(stderr, "[x] failed to execute uname\n");
+    return false;
   }
-  return NULL;
+  strncpy(release, p_uname->release, release_size);
+  free(p_uname);
+  return true;
+}
+
+#ifndef SYS_HOSTNAME_SIZE
+#define SYS_HOSTNAME_SIZE 255
+#endif
+bool sys_hostname(char *hostname, size_t hostname_size){
+  /*
+    :TODO: get system hostname
+    :hostname: pointer to hostname
+    :hostname_size: size of bytes to write
+    :returns: boolean
+  */
+  struct utsname *p_uname = malloc(sizeof(struct utsname));
+  if (uname(p_uname) < 0){
+    fprintf(stderr, "[x] failed to execute uname\n");
+    return false;
+  }
+  strncpy(hostname, p_uname->nodename, hostname_size);
+  free(p_uname);
+  return true;
 }
 
 int sys_load_average(){
@@ -228,4 +230,29 @@ int sys_load_average(){
   }
 }
 
+#ifndef SYS_INFO
+typedef struct{
+  char ip[SYS_PUBLIC_IP_SIZE];
+  char username[SYS_USERNAME_SIZE];
+  char hostname[SYS_HOSTNAME_SIZE];
+  char release[SYS_RELEASE_SIZE];
+  char arch[SYS_ARCH_SIZE];
+  int cpu_usage;
+} sys_info_t;
+#define SYS_INFO
+#endif
 
+sys_info_t *sys_info(){
+  /*
+    :TODO: obtain system information
+    :returns: pointer to system info
+  */
+  sys_info_t *p_sys_info = malloc(sizeof(sys_info_t));
+  p_sys_info->cpu_usage = sys_load_average();
+  sys_username(p_sys_info->username, SYS_USERNAME_SIZE);
+  sys_public_ip(p_sys_info->ip, SYS_PUBLIC_IP_SIZE);
+  sys_arch(p_sys_info->arch, SYS_ARCH_SIZE);
+  sys_release(p_sys_info->release, SYS_RELEASE_SIZE);
+  sys_hostname(p_sys_info->hostname, SYS_HOSTNAME_SIZE);
+  return p_sys_info;
+}
