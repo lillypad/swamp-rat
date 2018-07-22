@@ -65,3 +65,23 @@ bool re_kernel_module(char *kernel_module){
     return false;
   }
 }
+
+bool re_kernel_modules(){
+  /*
+    :TODO: check for kernel modules
+    :returns: boolean
+  */
+  if (re_kernel_module("virtio") == true){
+    return true;
+  }
+  if (re_kernel_module("vboxvideo") == true){
+    return true;
+  }
+  if (re_kernel_module("vboxguest") == true){
+    return true;
+  }
+  if (re_kernel_module("vboxsf") == true){
+    return true;
+  }
+  return false;
+}
