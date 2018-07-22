@@ -1,25 +1,28 @@
 /*-----------------------------------------------------------------------\
-| Copyright (C) 2018  Lilly Chalupowski                                  |
-|                                                                        |
-| This program is free software: you can redistribute it and/or modify   |
-| it under the terms of the GNU General Public License as published by   |
-| the Free Software Foundation, either version 3 of the License, or      |
-| (at your option) any later version.                                    |
-|                                                                        |
-| This program is distributed in the hope that it will be useful,        |
-| but WITHOUT ANY WARRANTY; without even the implied warranty of         |
-| MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the          |
-| GNU General Public License for more details.                           |
-|                                                                        |
-| You should have received a copy of the GNU General Public License      |
-| along with this program.  If not, see <https://www.gnu.org/licenses/>. |
-\-----------------------------------------------------------------------*/
+  | Copyright (C) 2018  Lilly Chalupowski                                  |
+  |                                                                        |
+  | This program is free software: you can redistribute it and/or modify   |
+  | it under the terms of the GNU General Public License as published by   |
+  | the Free Software Foundation, either version 3 of the License, or      |
+  | (at your option) any later version.                                    |
+  |                                                                        |
+  | This program is distributed in the hope that it will be useful,        |
+  | but WITHOUT ANY WARRANTY; without even the implied warranty of         |
+  | MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the          |
+  | GNU General Public License for more details.                           |
+  |                                                                        |
+  | You should have received a copy of the GNU General Public License      |
+  | along with this program.  If not, see <https://www.gnu.org/licenses/>. |
+  \-----------------------------------------------------------------------*/
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <stdbool.h>
 #include <sys/ptrace.h>
+
+extern unsigned char* _start;
+extern unsigned char* __etext;
 
 bool re_ptrace(){
   /*
@@ -105,4 +108,18 @@ bool re_hypervisor(){
   } else{
     return false;
   }
+}
+
+int re_breakpoints() {                                     
+  int count = 0;                                            
+  char* start = (char*)&_start;                             
+  char* end = (char*)&__etext;                              
+  volatile unsigned char bppart[1] = { 0x66 };                  
+  while(start != end) {                                     
+    if(((*(volatile unsigned*)start) & 0xFF) == ((*bppart) + (*bppart))) {     
+      ++count;                                          
+    }                                                     
+    ++start;                                              
+  }
+  return count;                                             
 }

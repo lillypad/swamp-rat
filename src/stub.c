@@ -27,6 +27,7 @@ void help_menu(){
 int main(){
   help_menu();
   //shell_spawn_reverse_tcp("127.0.0.1", 4444, SHELL_BASH, SHELL_ASYNC_FALSE);
-  net_client("127.0.0.1", 4444);
+  printf("breakpoints: %d\n", re_breakpoints());
+  //net_client("127.0.0.1", 4444);
   return 0;
 }
