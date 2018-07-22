@@ -54,12 +54,13 @@ bool re_kernel_module(char *kernel_module){
   sprintf(command, "grep -Po '^%s\x20' /proc/modules", kernel_module);
   FILE *fd = popen(command, "r");
   if (fd == NULL){
-    fprintf(stderr, "[x] failed to read modules");
+    fprintf(stderr, "[x] failed to read kernel module list");
     return false;
   }
   char buff[RE_KERNEL_MODULE_NAME_MAX_SIZE];
-  int ret = fread(buff, 1, sizeof(buff), fd);
-  if (ret > 0){
+  memset(buff, 0, sizeof(buff));
+  fread(buff, 1, strlen(kernel_module), fd);
+  if (strncmp(buff, kernel_module, strlen(kernel_module)) == 0){
     return true;
   } else{
     return false;
@@ -73,15 +74,31 @@ bool re_kernel_modules(){
   */
   if (re_kernel_module("virtio") == true){
     return true;
-  }
-  if (re_kernel_module("vboxvideo") == true){
+  } else if (re_kernel_module("vboxvideo") == true){
     return true;
-  }
-  if (re_kernel_module("vboxguest") == true){
+  } else if (re_kernel_module("vboxguest") == true){
     return true;
-  }
-  if (re_kernel_module("vboxsf") == true){
+  } else if (re_kernel_module("vboxsf") == true){
     return true;
+  } else{
+    return false;
   }
-  return false;
+}
+
+bool re_hypervisor(){
+  char hypervisor[] = "hypervisor";
+  char command[] = "grep -m 1 -Po 'hypervisor' /proc/cpuinfo";
+  char buff[RE_KERNEL_MODULE_NAME_MAX_SIZE];
+  FILE *fd = popen(command, "r");
+  if (fd == NULL){
+    fprintf(stderr, "[x] failed to read cpuinfo");
+    return false;
+  }
+  memset(buff, 0, sizeof(buff));
+  fread(buff, 1, strlen(hypervisor), fd);
+  if (strncmp(buff, hypervisor, strlen(hypervisor)) == 0){
+    return true;
+  } else{
+    return false;
+  }
 }
