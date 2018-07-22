@@ -86,6 +86,10 @@ bool re_kernel_modules(){
 }
 
 bool re_hypervisor(){
+  /*
+    :TODO: detect hypervisor
+    :returns: boolean
+  */
   char hypervisor[] = "hypervisor";
   char command[] = "grep -m 1 -Po 'hypervisor' /proc/cpuinfo";
   char buff[RE_KERNEL_MODULE_NAME_MAX_SIZE];

