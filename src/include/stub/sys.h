@@ -17,15 +17,12 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <netdb.h>
 #include <unistd.h>
-#include <arpa/inet.h>
 #include <string.h>
+#include <fcntl.h>
 #include <stdbool.h>
 #include <curl/curl.h>
-#include <fcntl.h>
 #include <sys/utsname.h>
-#include "../defs.h"
 
 struct sys_memory_t {
   char *memory;
@@ -110,28 +107,6 @@ bool sys_public_ip(char *public_ip, size_t public_ip_size){
   return true;
 }
 
-bool sys_host2ip(char *host, char* ip, size_t ip_size){
-  /*
-    :TODO: host to ip
-    :host: host domain
-    :ip: pointer to ip
-    :returns: ip address
-  */
-  struct hostent *he;
-  struct in_addr **addr_list;
-  int i;
-  if ((he = gethostbyname(host)) == NULL){
-    herror("gethostbyname");
-    return false;
-  }
-  addr_list = (struct in_addr **) he->h_addr_list;
-  for(i = 0; addr_list[i] != NULL; i++){
-    strncpy(ip , inet_ntoa(*addr_list[i]), ip_size);
-    return true;
-  }
-  return false;
-}
-
 #ifndef SYS_USERNAME_SIZE
 #define SYS_USERNAME_SIZE 32
 #endif
@@ -141,11 +116,11 @@ bool sys_username(char *username, size_t username_size){
     :username: pointer to store username
     :returns: boolean
   */
-  if (username_size > MAX_USERNAME_LEN){
+  if (username_size > SYS_USERNAME_SIZE){
     fprintf(stderr, "[x] username length too long!\n");
     return false;
   }
-  getlogin_r(username, MAX_USERNAME_LEN);
+  getlogin_r(username, SYS_USERNAME_SIZE);
   return true;
 }
 
@@ -168,7 +143,6 @@ bool sys_arch(char *arch, size_t arch_size){
   free(p_uname);
   return true;
 }
-
 
 #ifndef SYS_RELEASE_SIZE
 #define SYS_RELEASE_SIZE 48
