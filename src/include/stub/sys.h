@@ -24,10 +24,13 @@
 #include <curl/curl.h>
 #include <sys/utsname.h>
 
+#ifndef ASDF
 struct sys_memory_t {
   char *memory;
   size_t size;
 };
+#define ASDF
+#endif
 
 static size_t sys_curl_memory_callback(void *contents,
                                        size_t size,
