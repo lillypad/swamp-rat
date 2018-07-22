@@ -111,6 +111,10 @@ bool re_hypervisor(){
 }
 
 int re_breakpoints(){
+  /*
+    :TODO: detect breakpoint count (may have false positives)
+    :returns: (int) breakpoint count
+  */
   int count = 0;
   char* start = (char*)&_start;
   char* end = (char*)&__etext;

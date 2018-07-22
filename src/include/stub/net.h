@@ -22,14 +22,11 @@
 #include <stdbool.h>
 #include <string.h>
 #include <unistd.h>
+#include "../net.h"
 #include "sys.h"
 
 #ifndef NET_CLIENT_SLEEP
 #define NET_CLIENT_SLEEP 5
-#endif
-
-#ifndef NET_CLIENT_RESPONSE_MAX
-#define NET_CLIENT_RESPONSE_MAX 1024
 #endif
 
 #ifndef NET_CLIENT_BEACON
@@ -41,8 +38,17 @@ typedef struct{
 #endif
 
 bool net_client(char *host, int port){
+  /*
+    :TODO: stub network client
+    :returns: boolean
+  */
+  if (port < NET_PORT_MIN || port > NET_PORT_MAX){
+    fprintf(stderr, "[x] server port is invalid\n");
+    return false;
+  }
+  
   int sock_fd;
-  char response[NET_CLIENT_RESPONSE_MAX];
+  char response[NET_MAX_RESPONSE_SIZE];
   struct sockaddr_in server;
 
   memset(response, 0, sizeof(response));

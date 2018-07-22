@@ -22,6 +22,18 @@
 #include <string.h>
 #include <stdbool.h>
 
+#ifndef NET_PORT_MIN
+#define NET_PORT_MIN 1
+#endif
+
+#ifndef NET_PORT_MAX
+#define NET_PORT_MAX 65535
+#endif
+
+#ifndef NET_MAX_RESPONSE_SIZE
+#define NET_MAX_RESPONSE_SIZE 1024
+#endif
+
 bool net_host2ip(char *host, char* ip, size_t ip_size){
   /*
     :TODO: host to ip
