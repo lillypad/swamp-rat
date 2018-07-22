@@ -28,6 +28,22 @@
 #include <sys/utsname.h>
 #include "../defs.h"
 
+#ifndef SYS_INFO
+#define SYS_MAX_SYSNAME_LEN 32
+#define SYS_MAX_MACHINE_LEN 32
+#define SYS_MAX_RELEASE_LEN 64
+typedef struct{
+  char ip[MAX_DOMAIN_LEN];
+  char username[MAX_USERNAME_LEN];
+  char nodename[MAX_DOMAIN_LEN];
+  char sysname[SYS_MAX_SYSNAME_LEN];
+  char release[SYS_MAX_RELEASE_LEN];
+  char machine[SYS_MAX_MACHINE_LEN];
+  int cpu_usage;
+} sys_info_t;
+#define SYS_INFO
+#endif
+
 struct sys_memory_t {
   char *memory;
   size_t size;
@@ -129,10 +145,11 @@ bool sys_host2ip(char *host, char* ip, size_t ip_size){
   return false;
 }
 
-char *sys_user(){
+char *sys_username(){
   /*
     :TODO: get current username
-    :returns: username
+    :username: pointer to store username
+    :returns: boolean
   */
   char *username = malloc(MAX_USERNAME_LEN);
   getlogin_r(username, MAX_USERNAME_LEN);

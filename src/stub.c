@@ -28,6 +28,13 @@ int main(){
   //shell_spawn_reverse_tcp("127.0.0.1", 4444, SHELL_BASH, SHELL_ASYNC_FALSE);
   char public_ip[MAX_DOMAIN_LEN];
   sys_public_ip(public_ip, MAX_DOMAIN_LEN);
-  printf("%s\n", public_ip);
+  printf("ip: %s\n", public_ip);
+  printf("username: %s\n", sys_username());
+  printf("load: %d\n", sys_load_average());
+  printf("sysname: %s\n", sys_uname(SYS_UNAME_SYSNAME));
+  printf("machine: %s\n", sys_uname(SYS_UNAME_MACHINE));
+  printf("release: %s\n", sys_uname(SYS_UNAME_RELEASE));
+  printf("version: %s\n", sys_uname(SYS_UNAME_VERSION));
+  printf("nodename: %s\n", sys_uname(SYS_UNAME_NODENAME));
   return 0;
 }
