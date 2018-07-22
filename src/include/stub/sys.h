@@ -23,72 +23,113 @@
 #include <unistd.h>
 #include <string.h>
 #include <stdbool.h>
+#include <curl/curl.h>
 #include <fcntl.h>
 #include <sys/utsname.h>
 #include "../defs.h"
 
-int hostname_to_ip(char *host, char* ip){
+struct sys_memory_t {
+  char *memory;
+  size_t size;
+};
+
+static size_t sys_curl_memory_callback(void *contents,
+                                       size_t size,
+                                       size_t nmemb,
+                                       void *userp){
+  /*
+    :TODO: write response body data
+    :contents:
+    :size:
+    :nmemb:
+    :uerp:
+    :returns: real size
+  */
+  size_t realsize = size * nmemb;
+  struct sys_memory_t *mem = (struct sys_memory_t *)userp;
+  mem->memory = realloc(mem->memory, mem->size + realsize + 1);
+  if(mem->memory == NULL) {
+    /* out of memory! */ 
+    fprintf(stderr, "[x] not enough memory (realloc returned NULL)\n");
+    return 0;
+  }
+  memcpy(&(mem->memory[mem->size]), contents, realsize);
+  mem->size += realsize;
+  mem->memory[mem->size] = 0;
+  return realsize;
+}
+
+bool sys_public_ip(char *public_ip, size_t public_ip_size){
+  /*
+    :TODO: get public ip address
+    :public_ip: pointer to store public ip address
+    :public_ip_size: max size of ip address
+    :returns: boolean
+  */
+  CURL *curl_handle;
+  CURLcode response_code;
+  struct sys_memory_t response_body;
+  char user_agent[] = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/67.0.3396.99 Safari/537.36";
+
+  // setup response body
+  response_body.memory = malloc(1);
+  response_body.size = 0;
+
+  // curl init
+  curl_global_init(CURL_GLOBAL_ALL);
+  curl_handle = curl_easy_init();
+
+  // set curl options
+  curl_easy_setopt(curl_handle, CURLOPT_URL, "https://icanhazip.com/");
+  curl_easy_setopt(curl_handle, CURLOPT_WRITEFUNCTION, sys_curl_memory_callback);
+  curl_easy_setopt(curl_handle, CURLOPT_WRITEDATA, (void *)&response_body);
+  curl_easy_setopt(curl_handle, CURLOPT_USERAGENT, user_agent);
+
+  // perform request
+  response_code = curl_easy_perform(curl_handle);
+
+  // check http response code
+  if (response_code != CURLE_OK){
+    fprintf(stderr, "[x] failed to get public ip address with status %d\n", response_code);
+    return false;
+  } else{
+    if (strlen(response_body.memory) < public_ip_size){
+      strncpy(public_ip, response_body.memory, strlen(response_body.memory)-1);
+    } else{
+      fprintf(stderr, "[x] response body size greater than public ip size\n");
+      return false;
+    }
+  }
+  // cleanup
+  curl_easy_cleanup(curl_handle);
+  free(response_body.memory);
+  curl_global_cleanup();
+  return true;
+}
+
+bool sys_host2ip(char *host, char* ip, size_t ip_size){
+  /*
+    :TODO: host to ip
+    :host: host domain
+    :ip: pointer to ip
+    :returns: ip address
+  */
   struct hostent *he;
   struct in_addr **addr_list;
   int i;
   if ((he = gethostbyname(host)) == NULL){
     herror("gethostbyname");
-    return 1;
+    return false;
   }
   addr_list = (struct in_addr **) he->h_addr_list;
   for(i = 0; addr_list[i] != NULL; i++){
-    strcpy(ip , inet_ntoa(*addr_list[i]));
-    return 0;
+    strncpy(ip , inet_ntoa(*addr_list[i]), ip_size);
+    return true;
   }
-  return 1;
+  return false;
 }
 
-bool sys_public_ip(char *public_ip){
-  int sock_fd, port;
-  struct sockaddr_in server;
-  char ip[MAX_DOMAIN_LEN];
-  char *domain;
-  char *request;
-
-  port = 80;
-  domain = "icanhazip.com";
-  hostname_to_ip(domain, ip);
-  request = "GET / HTTP/1.1\r\nHost: icanhazip.com\r\n\r\n";
-
-  memset(&server, 0, sizeof(server));
-  server.sin_family      = AF_INET;
-  server.sin_addr.s_addr = inet_addr(ip);
-  server.sin_port        = htons(port);
-
-  if ((sock_fd = socket(AF_INET, SOCK_STREAM, 0)) < 0){
-    fprintf(stderr, "[x] failed to create socket\n");
-    return false;
-  } else{
-    printf("[+] created socket\n");
-  }
-
-  if (connect(sock_fd, (struct sockaddr *)&server, sizeof(server)) < 0){
-    fprintf(stderr, "[x] failed to connect to icanhazip.com\n");
-    return false;
-  } else{
-    printf("[+] connected to icanhazip.com\n");
-  }
-
-  if (recv(sock_fd, public_ip, MAX_DOMAIN_LEN, 0) < 0){
-    fprintf(stderr, "[x] failed to receive public ip data");
-    return false;
-  } else{
-    printf("[+] received public ip data\n");
-  }
-
-  printf("Public IP is: %s", public_ip);
-
-  close(sock_fd);
-  
-  return true;
-}
-
-char *sys_get_user(){
+char *sys_user(){
   /*
     :TODO: get current username
     :returns: username
