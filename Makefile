@@ -21,6 +21,8 @@ all:
 	gcc src/stub.c -o bin/stub -pthread -lcurl
 	objcopy bin/swamp-rat --add-section rodata=bin/stub
 	cp bin/swamp-rat swamp-rat
+
 clean:
 	rm -f swamp-rat
 	rm -rf bin/
+	rm -rf ssl/
