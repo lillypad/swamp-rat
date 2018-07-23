@@ -20,11 +20,15 @@ I started this as most free `linux` RATs are done half hazardly in higher level 
 
 # Building Swamp RAT
 ```bash
+./configure.sh
 make
 ```
 
+# Goals
+- To detect network traffic one would need your servers private key for `ssl` decryption as well as advanced `suricata` rules `lua` scripts to undo the `xor` encryption.
+
 # TODO
-- Communication Protocol
+- SSL Communications
 - Keylogging
 - Webcam Snapshot
 - AntiVM
