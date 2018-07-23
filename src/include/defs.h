@@ -15,20 +15,16 @@
 | along with this program.  If not, see <https://www.gnu.org/licenses/>. |
 \-----------------------------------------------------------------------*/
 
-#ifndef TCP_PORT_MAX
-#define TCP_PORT_MAX 65535
-#endif
-
-#ifndef TCP_PORT_MIN
-#define TCP_PORT_MIN 1
-#endif
-
 #ifndef MAX_DOMAIN_LEN
 #define MAX_DOMAIN_LEN 63
 #endif
 
 #ifndef MAX_USERNAME_LEN
 #define MAX_USERNAME_LEN 32
+#endif
+
+#ifndef DEFS_XOR_KEY
+#define DEFS_XOR_KEY 10
 #endif
 
 #ifndef CONFIG_DEFINED

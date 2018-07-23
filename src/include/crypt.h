@@ -17,63 +17,57 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <netdb.h>
-#include <arpa/inet.h>
 #include <string.h>
 #include <stdbool.h>
-#include "stub/sys.h"
 
-#ifndef NET_PORT_MIN
-#define NET_PORT_MIN 1
-#endif
-
-#ifndef NET_PORT_MAX
-#define NET_PORT_MAX 65535
-#endif
-
-#ifndef NET_MAX_RESPONSE_SIZE
-#define NET_MAX_RESPONSE_SIZE 1024
-#endif
-
-#ifndef NET_CLIENT_BEACON
-typedef struct{
-  int xor_key;
-  sys_info_t sysinfo;
-} net_client_beacon_t;
-#define NET_CLIENT_BEACON
-#endif
-
-#ifndef NET_SERVER_CMD_BEACON
-typedef struct{
-  int xor_key;
-  bool status;
-  int command;
-} net_server_beacon_t;
-#define NET_SERVER_CMD_BEACON 0
-#endif
-
-#ifndef NET_CLIENT_SLEEP
-#define NET_CLIENT_SLEEP 5
-#endif
-
-bool net_host2ip(char *host, char* ip, size_t ip_size){
+bool crypt_encrypt_xor(char *data,
+                       int data_size,
+                       int key){
   /*
-    :TODO: host to ip
-    :host: host domain
-    :ip: pointer to ip
-    :returns: ip address
+    :TODO: encrypt config data structure
+    :data: pointer to data structure
+    :data_size: size of the data
+    :key: xor integer key
+    :returns: boolean
   */
-  struct hostent *he;
-  struct in_addr **addr_list;
-  int i;
-  if ((he = gethostbyname(host)) == NULL){
-    herror("gethostbyname");
-    return false;
+  for (int i = 0; i < data_size; i++){
+    if (i > (int)sizeof(int) - 1){
+      data[i] = data[i]^key;
+    }
   }
-  addr_list = (struct in_addr **) he->h_addr_list;
-  for(i = 0; addr_list[i] != NULL; i++){
-    strncpy(ip , inet_ntoa(*addr_list[i]), ip_size);
-    return true;
+  return true;
+}
+
+bool crypt_encrypt_xor_all(char *data,
+                       int data_size,
+                       int key){
+  /*
+    :TODO: encrypt config data structure
+    :data: pointer to data structure
+    :data_size: size of the data
+    :key: xor integer key
+    :returns: boolean
+  */
+  for (int i = 0; i < data_size; i++){
+      data[i] = data[i]^key;
   }
-  return false;
+  return true;
+}
+
+bool crypt_decrypt_xor(char *data,
+                       int data_size,
+                       int key){
+   /*
+    :TODO: decrypt config data structure
+    :data: pointer to data structure
+    :data_size: size of the data
+    :key: xor integer key
+    :returns: boolean
+  */
+  for (int i = 0; i < data_size; i++){
+    if (i > (int)sizeof(int) - 1){
+      data[i] = data[i]^key;
+    }
+  }
+  return true;
 }

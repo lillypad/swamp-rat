@@ -62,7 +62,7 @@ static size_t sys_curl_memory_callback(void *contents,
 #ifndef SYS_PUBLIC_IP_SIZE
 #define SYS_PUBLIC_IP_SIZE 15
 #endif
-bool sys_public_ip(char *public_ip, size_t public_ip_size){
+bool sys_public_ip(char *public_ip){
   /*
     :TODO: get public ip address
     :public_ip: pointer to store public ip address
@@ -96,11 +96,11 @@ bool sys_public_ip(char *public_ip, size_t public_ip_size){
     fprintf(stderr, "[x] failed to get public ip address with status %d\n", response_code);
     return false;
   } else{
-    if (strlen(response_body.memory) < public_ip_size){
-      strncpy(public_ip, response_body.memory, strlen(response_body.memory)-1);
-    } else{
-      fprintf(stderr, "[x] response body size greater than public ip size\n");
+    if (strlen(response_body.memory)-1 > SYS_PUBLIC_IP_SIZE){
+      fprintf(stderr, "[x] response body public ip excceds public ip size\n");
       return false;
+    } else{
+      strncpy(public_ip, response_body.memory, strlen(response_body.memory)-1);
     }
   }
   // cleanup
@@ -227,7 +227,7 @@ sys_info_t *sys_info(){
   sys_info_t *p_sys_info = malloc(sizeof(sys_info_t));
   p_sys_info->cpu_usage = sys_load_average();
   sys_username(p_sys_info->username, SYS_USERNAME_SIZE);
-  sys_public_ip(p_sys_info->ip, SYS_PUBLIC_IP_SIZE);
+  sys_public_ip(p_sys_info->ip);
   sys_arch(p_sys_info->arch, SYS_ARCH_SIZE);
   sys_release(p_sys_info->release, SYS_RELEASE_SIZE);
   sys_hostname(p_sys_info->hostname, SYS_HOSTNAME_SIZE);

