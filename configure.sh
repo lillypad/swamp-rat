@@ -6,7 +6,7 @@
 
 function get_country(){
     COUNTRIES[0]="AF"
-    COUNTRIES[1]=AL
+    COUNTRIES[1]="AL"
     COUNTRIES[2]="DZ"
     COUNTRIES[3]="AS"
     COUNTRIES[4]="AD"
