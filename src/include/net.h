@@ -23,6 +23,11 @@
 #include <stdbool.h>
 #include "stub/sys.h"
 
+
+#ifndef NET_TIMEOUT
+#define NET_TIMEOUT 5
+#endif
+
 #ifndef NET_PORT_MIN
 #define NET_PORT_MIN 1
 #endif

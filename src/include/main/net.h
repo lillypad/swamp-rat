@@ -50,6 +50,11 @@ bool net_start_server(int port){
     return false;
   }
 
+  // allow easy restart of server
+  if (setsockopt(server_fd, SOL_SOCKET, SO_REUSEADDR, &(int){ 1 }, sizeof(int)) < 0){
+    fprintf(stderr, "[x] so_reuseaddr failed to set\n");
+  }
+
   // set server properties
   memset(&server, 0, sizeof(server));
   server.sin_family      = AF_INET;

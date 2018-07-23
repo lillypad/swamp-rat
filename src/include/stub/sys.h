@@ -23,6 +23,7 @@
 #include <stdbool.h>
 #include <curl/curl.h>
 #include <sys/utsname.h>
+//#include "../net.h"
 
 #ifndef SYS_MEMORY
 struct sys_memory_t {
@@ -58,6 +59,9 @@ static size_t sys_curl_memory_callback(void *contents,
   return realsize;
 }
 
+#ifndef SYS_PUBLIC_IP_TIMEOUT
+#define SYS_PUBLIC_IP_TIMEOUT 5
+#endif
 
 #ifndef SYS_PUBLIC_IP_SIZE
 #define SYS_PUBLIC_IP_SIZE 15
@@ -87,21 +91,27 @@ bool sys_public_ip(char *public_ip){
   curl_easy_setopt(curl_handle, CURLOPT_WRITEFUNCTION, sys_curl_memory_callback);
   curl_easy_setopt(curl_handle, CURLOPT_WRITEDATA, (void *)&response_body);
   curl_easy_setopt(curl_handle, CURLOPT_USERAGENT, user_agent);
+  curl_easy_setopt(curl_handle, CURLOPT_TIMEOUT_MS, (1000*SYS_PUBLIC_IP_TIMEOUT));
 
   // perform request
   response_code = curl_easy_perform(curl_handle);
 
   // check http response code
-  if (response_code != CURLE_OK){
-    fprintf(stderr, "[x] failed to get public ip address with status %d\n", response_code);
-    return false;
-  } else{
+  if (response_code == CURLE_OK){
     if (strlen(response_body.memory)-1 > SYS_PUBLIC_IP_SIZE){
       fprintf(stderr, "[x] response body public ip excceds public ip size\n");
       return false;
-    } else{
-      strncpy(public_ip, response_body.memory, strlen(response_body.memory)-1);
-    }
+    } 
+    strncpy(public_ip, response_body.memory, strlen(response_body.memory)-1);
+  } else if (response_code == CURLE_OPERATION_TIMEDOUT){
+    fprintf(stderr, "[x] fetching public ip timeout check internet connection\n");
+    return false;
+  }else if (response_code != CURLE_OK){
+    fprintf(stderr, "[x] failed to get public ip address with status %d\n", response_code);
+    return false;
+  } else{
+    fprintf(stderr, "[x] unknown error occured fetching public ip\n");
+    return false;
   }
   // cleanup
   curl_easy_cleanup(curl_handle);
