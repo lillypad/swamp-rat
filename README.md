@@ -26,6 +26,7 @@ make
 
 # Goals
 - To detect network traffic one would need your servers private key for `ssl` decryption as well as advanced `suricata` rules `lua` scripts to undo the `xor` encryption.
+- `ssl` fingerprinting could still be used but you can just generate a new random certificate
 
 # TODO
 - SSL Communications
