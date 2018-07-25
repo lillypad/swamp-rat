@@ -23,6 +23,8 @@
 #include <stdbool.h>
 #include <curl/curl.h>
 #include <sys/utsname.h>
+#include <pwd.h>
+#include <errno.h>
 //#include "../net.h"
 
 #ifndef SYS_MEMORY
@@ -133,8 +135,18 @@ bool sys_username(char *username, size_t username_size){
     fprintf(stderr, "[x] username length too long!\n");
     return false;
   }
-  getlogin_r(username, SYS_USERNAME_SIZE);
-  return true;
+  uid_t uid;
+  struct passwd *pw;
+  uid = geteuid();
+  pw = getpwuid(uid);
+  if (pw){
+    strncpy(username, pw->pw_name, username_size);
+    return true;
+  } else{
+    fprintf(stderr, "[x] cannot find username for uid: %u\n", (unsigned)uid);
+    return false;
+  }
+  return false;
 }
 
 #ifndef SYS_ARCH_SIZE
