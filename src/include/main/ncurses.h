@@ -22,10 +22,6 @@
 #include <ncurses.h>
 #include <errno.h>
 
-#ifndef NCURSES_MAIN_WIN_COLOR
-#define NCURSES_MAIN_WIN_COLOR 1
-#endif
-
 bool ncurses_window_cleanup(WINDOW *win){
   delwin(win);
   endwin();
@@ -34,24 +30,14 @@ bool ncurses_window_cleanup(WINDOW *win){
 }
 
 bool ncurses_window_border(WINDOW *win){
-  int x, y;
-  getmaxyx(win, y, x);
-  mvwprintw(win, 0, 0, "/");
-  mvwprintw(win, y -1, 0, "\\");
-  mvwprintw(win, 0, x - 1, "\\");
-  mvwprintw(win, y -1 , x -1, "/");
-  for (int i = 1; i < (y -1); i++){
-    mvwprintw(win, i, 0, "|");
-    mvwprintw(win, i, x - 1, "|");
-  }
-  for (int i = 1; i < (x - 1); i++){
-    mvwprintw(win, 0, i, "-");
-    mvwprintw(win, y - 1, i, "-");
-  }
+  box(win, 0, 0);
+  wrefresh(win);
   return true;
 }
 
-#define MAIN_WIN_COLOR 1
+#ifndef NCURSES_MAIN_WIN_COLOR
+#define NCURSES_MAIN_WIN_COLOR 1
+#endif
 
 bool ncurses_main(){
   /*
@@ -76,14 +62,21 @@ bool ncurses_main(){
     return false;
   }
 
-  init_pair(MAIN_WIN_COLOR, COLOR_GREEN, COLOR_BLACK);
-  wbkgd(win_main, COLOR_PAIR(MAIN_WIN_COLOR));
+  init_pair(NCURSES_MAIN_WIN_COLOR, COLOR_GREEN, COLOR_BLACK);
+  wbkgd(win_main, COLOR_PAIR(NCURSES_MAIN_WIN_COLOR));
 
-  //ncurses_window_border(win_main);
-  box(win_main, 0, 0);
-  wrefresh(win_main);
+  ncurses_window_border(win_main);
 
-  getch();
+  // main program loop
+  int key;
+  while ((key = getch()) != 27){
+    if (key == KEY_RESIZE){
+      clear();
+      ncurses_window_border(win_main);
+    }
+  }
+
+  //getch();
 
   ncurses_window_cleanup(win_main);
   
