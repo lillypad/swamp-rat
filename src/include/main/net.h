@@ -22,6 +22,7 @@
 #include <unistd.h>
 #include <stdbool.h>
 #include <string.h>
+#include <errno.h>
 #include "../net.h"
 #include "../crypt.h"
 #include "../defs.h"
@@ -32,7 +33,6 @@ bool net_start_server(int port){
     :port: (int) server listening port
     :returns: (bool)
   */
-  char data[] = "hello";
   if (port < NET_PORT_MIN || port > NET_PORT_MAX){
     fprintf(stderr, "[x] server port is invalid\n");
     return false;
@@ -46,13 +46,13 @@ bool net_start_server(int port){
   // setup socket
   server_fd = socket(AF_INET, SOCK_STREAM, 0);
   if (server_fd < 0){
-    fprintf(stderr, "[x] server error creating socket\n");
+    fprintf(stderr, "[x] %s\n", strerror(errno));
     return false;
   }
 
   // allow easy restart of server
   if (setsockopt(server_fd, SOL_SOCKET, SO_REUSEADDR, &(int){ 1 }, sizeof(int)) < 0){
-    fprintf(stderr, "[x] so_reuseaddr failed to set\n");
+    fprintf(stderr, "[-] %s\n", strerror(errno));
   }
 
   // set server properties
@@ -64,7 +64,7 @@ bool net_start_server(int port){
   // bind to socket
   err = bind(server_fd, (struct sockaddr *) &server, sizeof(server));
   if (err < 0){
-    fprintf(stderr, "[x] bind to socket failed\n");
+    fprintf(stderr, "[x] %s\n", strerror(errno));
     return false;
   }
 
@@ -74,7 +74,8 @@ bool net_start_server(int port){
   if (listen(server_fd, 128)  == 0){
     printf("[*] listening...\n");
   } else{
-    fprintf(stderr, "[-] listen to socket failed\n");
+    fprintf(stderr, "[x] %s\n", strerror(errno));
+    return false;
   }
   
   while (true){
@@ -113,7 +114,7 @@ bool net_start_server(int port){
         p_net_server_beacon->status = true;
         crypt_encrypt_xor((void *)p_net_server_beacon, sizeof(net_server_beacon_t), DEFS_XOR_KEY);
         if (send(client_fd, p_net_server_beacon, sizeof(net_server_beacon_t), 0) < 0){
-          fprintf(stderr, "[-] send data to client failed!\n");
+          fprintf(stderr, "[x] %s\n", strerror(errno));
           return false;
         }
         memset(p_net_server_beacon, 0, sizeof(net_server_beacon_t));
