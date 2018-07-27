@@ -26,3 +26,9 @@ clean:
 	rm -f swamp-rat
 	rm -rf bin/
 	rm -rf ssl/
+
+install:
+	cp bin/swamp-rat /usr/bin/swamp-rat
+
+uninstall:
+	rm -f /usr/bin/swamp-rat
