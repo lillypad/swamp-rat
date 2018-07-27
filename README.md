@@ -17,6 +17,7 @@ I started this as most free `linux` RATs are done half hazardly in higher level 
 
 # Dependancies
 - [`libcurl`](https://curl.haxx.se/libcurl/) - libcurl
+- [`libcurses`](http://tldp.org/HOWTO/NCURSES-Programming-HOWTO/)
 
 # Building Swamp RAT
 ```bash
@@ -32,5 +33,3 @@ make
 - SSL Communications
 - Keylogging
 - Webcam Snapshot
-- AntiVM
-- RE Evasion
