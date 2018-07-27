@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 
-##############################
-# swamp-rat environment file #
-##############################
+##################################
+# swamp-rat configuration script #
+##################################
 
 function get_country(){
     COUNTRIES[0]="AF"

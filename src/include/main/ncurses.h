@@ -23,6 +23,10 @@
 #include <errno.h>
 
 bool ncurses_window_cleanup(WINDOW *win){
+  /*
+    :TODO: clean up window
+    :returns: boolean
+  */
   delwin(win);
   endwin();
   refresh();
@@ -30,8 +34,44 @@ bool ncurses_window_cleanup(WINDOW *win){
 }
 
 bool ncurses_window_border(WINDOW *win){
+  /*
+    :TODO: draw window border
+    :returns: boolean
+  */
   box(win, 0, 0);
   wrefresh(win);
+  return true;
+}
+
+bool ncurses_window_title(WINDOW *win, char *title){
+  /*
+    :TODO: draw window title
+    :win: pointer to window struct
+    :title: title of window
+    :returns: boolean
+  */
+  int x, y;
+  getmaxyx(win, y, x);
+  mvprintw(0, ((x/2) - (strlen(title)/2)), title);
+  wrefresh(win);
+  return true;
+}
+
+bool ncurses_window_clients(WINDOW *win_main,
+                            WINDOW *win,
+                            int x_pos,
+                            int y_pos,
+                            int x,
+                            int y){
+  /*
+    :TODO: draw clients window
+    :win_main: main window
+    :win: clients window struct
+    :x_pos: start x position
+    :y_pos: start y position
+    :x: x width
+    :y: y height
+  */
   return true;
 }
 
@@ -42,9 +82,11 @@ bool ncurses_window_border(WINDOW *win){
 bool ncurses_main(){
   /*
     :TODO: initalize main window
+    :returns: boolean
   */
-
-  // let ncurses choose right terminal env
+  int key;
+  char win_main_title[] = "|Swamp RAT|";
+  
   if(putenv("TERM=linux") != 0){
     fprintf(stderr, "[x] %s\n", strerror(errno));
     return false;
@@ -66,17 +108,15 @@ bool ncurses_main(){
   wbkgd(win_main, COLOR_PAIR(NCURSES_MAIN_WIN_COLOR));
 
   ncurses_window_border(win_main);
+  ncurses_window_title(win_main, win_main_title);
 
-  // main program loop
-  int key;
   while ((key = getch()) != 27){
     if (key == KEY_RESIZE){
       clear();
       ncurses_window_border(win_main);
+      ncurses_window_title(win_main, win_main_title);
     }
   }
-
-  //getch();
 
   ncurses_window_cleanup(win_main);
   
