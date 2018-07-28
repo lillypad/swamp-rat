@@ -20,7 +20,10 @@
 #include <string.h>
 #include <stdbool.h>
 #include <ncurses.h>
+#include <menu.h>
 #include <errno.h>
+
+#define ARRAY_SIZE(a)(sizeof(a) / sizeof(a[0]))
 
 bool ncurses_window_cleanup(WINDOW *win){
   /*
@@ -57,12 +60,13 @@ bool ncurses_window_title(WINDOW *win, char *title){
   return true;
 }
 
-bool ncurses_window_clients(WINDOW *win_main,
+bool ncurses_window_victims(WINDOW *win_main,
                             WINDOW *win,
                             int x_pos,
                             int y_pos,
                             int x,
-                            int y){
+                            int y,
+                            char *victims){
   /*
     :TODO: draw clients window
     :win_main: main window
@@ -72,6 +76,40 @@ bool ncurses_window_clients(WINDOW *win_main,
     :x: x width
     :y: y height
   */
+  int n_victims;
+  ITEM **items;
+  MENU *menu;
+  //char *victims[] = { "user_0@ip", "user_1@ip", (char *)NULL};
+
+  // create items
+  n_victims = ARRAY_SIZE(victims);
+  items = (ITEM **)calloc(n_victims + 1, sizeof(ITEM *));
+  for (int i = 0; i < n_victims; i++){
+    items[i] = new_item(&victims[i], &victims[i]);
+  }
+  items[n_victims] = (ITEM *)NULL;
+
+  // create menu
+  menu = new_menu((ITEM **)items);
+
+  // create menu window
+  win = newwin(x_pos, y_pos, x, y);
+  keypad(win, true);
+
+  // set main window and sub window
+  set_menu_win(menu, win);
+  set_menu_sub(menu, derwin(win, 6, 38, 3, 1));
+
+  // set menu marker
+  set_menu_mark(menu, " * ");
+
+  // draw menu border
+  box(win, 0, 0);
+  refresh();
+
+  // post the window
+  post_menu(menu);
+  wrefresh(win);
   return true;
 }
 
