@@ -24,7 +24,6 @@
 #include <errno.h>
 
 #define ARRAY_SIZE(a)(sizeof(a) / sizeof(a[0]))
-#define CTRLD 	4
 
 char *itoa(int x){
   /*
@@ -56,7 +55,7 @@ bool ncurses_window_border(WINDOW *win){
     :returns: boolean
   */
   box(win, 0, 0);
-  wrefresh(win);
+  refresh();
   return true;
 }
 
@@ -69,8 +68,22 @@ bool ncurses_window_title(WINDOW *win, char *title){
   */
   int x, y;
   getmaxyx(win, y, x);
-  mvprintw(0, ((x/2) - (strlen(title)/2)), title);
-  wrefresh(win);
+  mvprintw(0, ((x / 2) - (strlen(title)/2)), title);
+  refresh();
+  return true;
+}
+
+bool ncurses_window_footer(WINDOW *win, char *footer){
+  /*
+    :TODO: draw window footer
+    :win: pointer to window struct
+    :footer: footerof window
+    :returns: boolean
+  */
+  int x, y;
+  getmaxyx(win, y, x);
+  mvprintw(y - 1, ((x / 2) - (strlen(footer) / 2)), footer);
+  refresh();
   return true;
 }
 
@@ -78,12 +91,16 @@ bool ncurses_window_title(WINDOW *win, char *title){
 #define NCURSES_MAIN_WIN_COLOR 1
 #endif
 
-char *choices[] = {
-  "Choice 1",
-  "Choice 2",
-  "Choice 3",
-  "Choice 4",
-  "Exit",
+#ifndef NCURSES_MENU_WIN_COLOR
+#define NCURSES_MENU_WIN_COLOR 2
+#endif
+
+char *victims[] = {
+  "c3rb3ru5@192.168.0.1",
+  "1337h@x0r@192.168.0.2",
+  "nu11byt3@192.168.0.3",
+  "ubuntu@192.168.0.4",
+  "gentoo@192.168.0.5",
   (char *)NULL,
 };
 
@@ -115,129 +132,109 @@ void ncurses_print_menu_title(WINDOW *win,
   refresh();
 }
 
-bool ncurses_test(){
-    ITEM **my_items;
-	int c;				
-	MENU *my_menu;
-    WINDOW *my_menu_win, *win_main;
-    int n_choices;
-
-    if(putenv("TERM=linux") != 0){
-      fprintf(stderr, "[x] %s\n", strerror(errno));
-      return false;
-    }
-
-    if ((win_main = initscr()) == NULL){
-      fprintf(stderr, "[x] %s\n", strerror(errno));
-      return false;
-    }
-    
-    if (start_color() == ERR || !has_colors() || !can_change_color()){
-      ncurses_window_cleanup(win_main);
-      fprintf(stderr, "[x] %s\n", strerror(errno));
-      return false;
-    }
-
-    // set main window color
-    init_pair(NCURSES_MAIN_WIN_COLOR, COLOR_GREEN, COLOR_BLACK);
-    wbkgd(win_main, COLOR_PAIR(NCURSES_MAIN_WIN_COLOR));
-    
-    cbreak();
-    noecho();
-	keypad(stdscr, true);
-	init_pair(1, COLOR_GREEN, COLOR_BLACK);
-
-    n_choices = ARRAY_SIZE(choices);
-    my_items = (ITEM **)calloc(n_choices, sizeof(ITEM *));
-    for(int i = 0; i < n_choices -1; ++i){
-      my_items[i] = new_item(itoa(i+1), choices[i]);
-    }
-
-	my_menu = new_menu((ITEM **)my_items);
-
-    my_menu_win = newwin(10, 40, 4, 4);
-    wbkgd(my_menu_win, COLOR_PAIR(NCURSES_MAIN_WIN_COLOR));
-    keypad(my_menu_win, TRUE);
-     
-    set_menu_win(my_menu, my_menu_win);
-    set_menu_sub(my_menu, derwin(my_menu_win, 6, 38, 3, 1));
-
-    set_menu_mark(my_menu, " -> ");
-    
-    box(my_menu_win, 0, 0);
-    ncurses_print_menu_title(my_menu_win, 1, 0, 40, "Swamp RAT Victims");
-    mvwaddch(my_menu_win, 2, 0, ACS_LTEE);
-	mvwhline(my_menu_win, 2, 1, ACS_HLINE, 38);
-	mvwaddch(my_menu_win, 2, 39, ACS_RTEE);
-	refresh();
-        
-	/* Post the menu */
-	post_menu(my_menu);
-	wrefresh(my_menu_win);
-
-	while((c = wgetch(my_menu_win)) != KEY_F(1)){
-      switch(c){
-      case KEY_DOWN:
-        menu_driver(my_menu, REQ_DOWN_ITEM);
-        break;
-      case KEY_UP:
-        menu_driver(my_menu, REQ_UP_ITEM);
-        break;
-      }
-      wrefresh(my_menu_win);
-	}	
-
-    unpost_menu(my_menu);
-    free_menu(my_menu);
-    for(int i = 0; i < n_choices; ++i){
-                free_item(my_items[i]);
-    }
-	endwin();
-  return true;
-}
-
 bool ncurses_main(){
   /*
-    :TODO: initalize main window
+    :TODO: main ncurses interface
     :returns: boolean
   */
-  int key;
-  WINDOW *win_main;
+  int x, y, key, n_victims;
+  int x_margin, y_margin;
+  ITEM **items;
+  MENU *menu;
+  WINDOW *win_menu, *win_main;
   char win_main_title[] = "|Swamp RAT|";
-  
+  char win_menu_title[] = "V1c71m5";
+
+  x_margin = 4;
+  y_margin = 2;
+
+  // set env for correct terminal viewing
   if(putenv("TERM=linux") != 0){
     fprintf(stderr, "[x] %s\n", strerror(errno));
     return false;
   }
-  
+
+  // initalize main window
   if ((win_main = initscr()) == NULL){
     fprintf(stderr, "[x] %s\n", strerror(errno));
     return false;
   }
 
+  // start colors and check for color support
   if (start_color() == ERR || !has_colors() || !can_change_color()){
     ncurses_window_cleanup(win_main);
     fprintf(stderr, "[x] %s\n", strerror(errno));
     return false;
   }
 
+  // hide cursor
+  curs_set(0);
+  
+  // get main window max width and height;
+  getmaxyx(win_main, y, x);
+  
+  // setup main window
   init_pair(NCURSES_MAIN_WIN_COLOR, COLOR_GREEN, COLOR_BLACK);
+  init_pair(NCURSES_MENU_WIN_COLOR, COLOR_RED, COLOR_BLACK);
   wbkgd(win_main, COLOR_PAIR(NCURSES_MAIN_WIN_COLOR));
-
   ncurses_window_border(win_main);
   ncurses_window_title(win_main, win_main_title);
+  ncurses_window_footer(win_main, "|v0.9b|");
+    
+  cbreak();
+  noecho();
+  keypad(stdscr, true);
 
-  while ((key = getch()) != 27){
-    if (key == KEY_RESIZE){
-      clear();
-      ncurses_window_border(win_main);
-      ncurses_window_title(win_main, win_main_title);
-    }
-    wrefresh(win_main);
+  // set items for menu of victim machines
+  n_victims = ARRAY_SIZE(victims);
+  items = (ITEM **)calloc(n_victims, sizeof(ITEM *));
+  for(int i = 0; i < n_victims -1; ++i){
+    items[i] = new_item(itoa(i+1), victims[i]);
   }
 
-  // cleanup
-  ncurses_window_cleanup(win_main);
+  // create menu of victim machines
+  menu = new_menu((ITEM **)items);
+
+  // create menu window
+  win_menu = newwin((y - (y_margin * 2)), (x - (x_margin * 2)), 2, 4);
+  wbkgd(win_menu, COLOR_PAIR(NCURSES_MENU_WIN_COLOR));
+  keypad(win_menu, true);
+  set_menu_win(menu, win_menu);
+  set_menu_sub(menu, derwin(win_menu, 6, 38, 3, 1));
+  set_menu_mark(menu, " -> ");
+  box(win_menu, 0, 0);
+  ncurses_print_menu_title(win_menu, 1, 0, (x - (x_margin * 2)), win_menu_title);
+  mvwaddch(win_menu, y_margin, 0, ACS_LTEE);
+  mvwhline(win_menu, y_margin, 1, ACS_HLINE, ((x - (x_margin * 2)) - 2));
+  mvwaddch(win_menu, y_margin, (x - (x_margin * 2)) - 1, ACS_RTEE);
+  refresh();
+  post_menu(menu);
   
+  wrefresh(win_menu);
+  
+  while((key = wgetch(win_menu)) != KEY_F(1)){
+    switch(key){
+    case KEY_RESIZE:
+      ncurses_window_border(win_main);
+      ncurses_window_title(win_main, win_main_title);
+      break;
+    case KEY_DOWN:
+      menu_driver(menu, REQ_DOWN_ITEM);
+      break;
+    case KEY_UP:
+      menu_driver(menu, REQ_UP_ITEM);
+      break;
+    }
+    wrefresh(win_menu);
+    wrefresh(win_main);
+  }	
+
+    // cleanup
+  unpost_menu(menu);
+  free_menu(menu);
+  for(int i = 0; i < n_victims; ++i){
+    free_item(items[i]);
+  }
+  endwin();
   return true;
 }
