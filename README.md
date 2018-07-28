@@ -16,7 +16,7 @@ A `linux` RAT that lurks where others do not.
 I started this as most free `linux` RATs are done half hazardly in higher level languages.
 
 # Dependancies
-- [`libcurl`](https://curl.haxx.se/libcurl/) - libcurl
+- [`libcurl`](https://curl.haxx.se/libcurl/)
 - [`libcurses`](http://tldp.org/HOWTO/NCURSES-Programming-HOWTO/)
 
 # Building Swamp RAT
@@ -25,11 +25,11 @@ I started this as most free `linux` RATs are done half hazardly in higher level 
 make
 ```
 
-# Goals
-- To detect network traffic one would need your servers private key for `ssl` decryption as well as advanced `suricata` rules `lua` scripts to undo the `xor` encryption.
-- `ssl` fingerprinting could still be used but you can just generate a new random certificate
+# Notable Features
+- `xor` encrypted packets over `tcp`
+- `ncurses` terminal `ui`
 
 # TODO
 - SSL Communications
-- Keylogging
 - Webcam Snapshot
+- Finish `ncurses` interface
