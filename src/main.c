@@ -19,7 +19,6 @@
 #include <stdlib.h>
 #include <stdbool.h>
 #include <argp.h>
-#include "include/main/net.h"
 #include "include/main/ncurses.h"
 
 const char *program_version = "swamp-rat 0.9b";

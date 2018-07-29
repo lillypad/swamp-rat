@@ -110,7 +110,7 @@ bool shell_spawn_reverse_tcp(char *host, int host_port, int shell_type, bool she
   } else{
     p_shell_reverse_tcp_args->host_port = 4444;
   }
-  if (host_port > TCP_PORT_MAX || host_port <= TCP_PORT_MIN){
+  if (host_port > 65535 || host_port <= 0){
     fprintf(stderr, "error: invalid port number\n");
     return false;
   } else{
