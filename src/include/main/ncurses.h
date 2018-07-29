@@ -132,6 +132,63 @@ void ncurses_print_menu_title(WINDOW *win,
   refresh();
 }
 
+bool ncurses_menu_cleanup(MENU *menu){
+  /*
+    :TODO: cleanup menu
+    :menu: (MENU *)
+    :returns: boolean
+  */
+  unpost_menu(menu);
+  free_menu(menu);
+  return true;
+}
+
+bool ncurses_item_cleanup(ITEM **items, int n_items){
+  for(int i = 0; i < n_items; ++i){
+    free_item(items[i]);
+  }
+  return true;
+}
+
+bool ncurses_window_victims(WINDOW *win_main,
+                            MENU *menu,
+                            WINDOW *win_menu,
+                            char *win_menu_title,
+                            int x_pos,
+                            int y_pos,
+                            int y_margin,
+                            int x_margin){
+  /*
+    :TODO: draw victims menu
+    :win_main: pointer to main window
+    :menu: pointer to menu
+    :win_menu: pointer to menu window
+    :win_menu_title: title for menu
+    :x_pos: x position of menu
+    :y_pos: y position of menu
+    :y_margin: y margin
+    :x_margin: x margin
+    :returns: boolean
+  */
+  int x, y;
+  getmaxyx(win_main, y, x);
+  wmove(win_menu, x_pos, y_pos);
+  wresize(win_menu, (y - (y_margin * 2)), (x - (x_margin * 2)));
+  wbkgd(win_menu, COLOR_PAIR(NCURSES_MENU_WIN_COLOR));
+  keypad(win_menu, true);
+  set_menu_win(menu, win_menu);
+  set_menu_sub(menu, derwin(win_menu, 6, 38, 3, 1));
+  set_menu_mark(menu, " -> ");
+  box(win_menu, 0, 0);
+  ncurses_print_menu_title(win_menu, 1, 0, (x - (x_margin * 2)), win_menu_title);
+  mvwaddch(win_menu, y_margin, 0, ACS_LTEE);
+  mvwhline(win_menu, y_margin, 1, ACS_HLINE, ((x - (x_margin * 2)) - 2));
+  mvwaddch(win_menu, y_margin, (x - (x_margin * 2)) - 1, ACS_RTEE);
+  post_menu(menu);
+  refresh();
+  return true;
+}
+
 bool ncurses_main(){
   /*
     :TODO: main ncurses interface
@@ -196,45 +253,53 @@ bool ncurses_main(){
   menu = new_menu((ITEM **)items);
 
   // create menu window
-  win_menu = newwin((y - (y_margin * 2)), (x - (x_margin * 2)), 2, 4);
-  wbkgd(win_menu, COLOR_PAIR(NCURSES_MENU_WIN_COLOR));
-  keypad(win_menu, true);
-  set_menu_win(menu, win_menu);
-  set_menu_sub(menu, derwin(win_menu, 6, 38, 3, 1));
-  set_menu_mark(menu, " -> ");
-  box(win_menu, 0, 0);
-  ncurses_print_menu_title(win_menu, 1, 0, (x - (x_margin * 2)), win_menu_title);
-  mvwaddch(win_menu, y_margin, 0, ACS_LTEE);
-  mvwhline(win_menu, y_margin, 1, ACS_HLINE, ((x - (x_margin * 2)) - 2));
-  mvwaddch(win_menu, y_margin, (x - (x_margin * 2)) - 1, ACS_RTEE);
-  refresh();
-  post_menu(menu);
-  
+  win_menu = newwin((y - (y_margin * 2)),
+                    (x - (x_margin * 2)),
+                    2,
+                    4);
+  ncurses_window_victims(win_main,
+                         menu,
+                         win_menu,
+                         win_menu_title,
+                         4,
+                         2,
+                         y_margin,
+                         x_margin);
   wrefresh(win_menu);
   
-  while((key = wgetch(win_menu)) != KEY_F(1)){
+  while((key = getch()) != 27){
     switch(key){
     case KEY_RESIZE:
+      getmaxyx(win_main, y, x);
+      wclear(win_main);
+      wclear(win_menu);
       ncurses_window_border(win_main);
       ncurses_window_title(win_main, win_main_title);
+      ncurses_window_footer(win_main, "|0.9b|");
+      ncurses_window_victims(win_main,
+                             menu,
+                             win_menu,
+                             win_menu_title,
+                             4,
+                             2,
+                             y_margin,
+                             x_margin);
+      wrefresh(win_main);
+      wrefresh(win_menu);
       break;
     case KEY_DOWN:
       menu_driver(menu, REQ_DOWN_ITEM);
+      wrefresh(win_menu);
       break;
     case KEY_UP:
       menu_driver(menu, REQ_UP_ITEM);
+      wrefresh(win_menu);
       break;
     }
-    wrefresh(win_menu);
-    wrefresh(win_main);
   }	
 
-    // cleanup
-  unpost_menu(menu);
-  free_menu(menu);
-  for(int i = 0; i < n_victims; ++i){
-    free_item(items[i]);
-  }
+  ncurses_menu_cleanup(menu);
+  ncurses_item_cleanup(items, n_victims);
   endwin();
   return true;
 }
