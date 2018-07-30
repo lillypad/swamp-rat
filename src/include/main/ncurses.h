@@ -152,17 +152,18 @@ bool ncurses_item_cleanup(ITEM **items, int n_items){
   return true;
 }
 
-bool ncurses_item_victims(ITEM **items){
-  int j = 0;
-  for(int i = 0; i < NET_MAX_CLIENTS; ++i){
-    if (p_victims[i] != NULL){
-      items[j] = new_item(p_victims[i]->sysinfo.ip,
-                          p_victims[i]->sysinfo.username);
-      j++;
-    }
-  }
-  return true;
-}
+/* bool ncurses_item_victims(ITEM **items){ */
+/*   int j = 0; */
+/*   for(int i = 0; i < NET_MAX_CLIENTS; ++i){ */
+/*     if (p_victims[i] != NULL){ */
+/*       printf("[+] username:%s\n", p_victims[i]->sysinfo.username); */
+/*       items[j] = new_item(p_victims[i]->sysinfo.ip, */
+/*                           p_victims[i]->sysinfo.username); */
+/*       j++; */
+/*     } */
+/*   } */
+/*   return true; */
+/* } */
 
 bool ncurses_window_victims(WINDOW *win_main,
                             MENU *menu,
@@ -212,7 +213,6 @@ bool ncurses_main(){
     :TODO: main ncurses interface
     :returns: boolean
   */
-  int port = 4444;
   int x, y, key, n_victims;
   int x_margin, y_margin;
   ITEM **items;
@@ -269,20 +269,20 @@ bool ncurses_main(){
   keypad(stdscr, true);
 
   // set items for menu of victim machines
-  /* n_victims = ARRAY_SIZE(victims); */
-  /* items = (ITEM **)calloc(n_victims, sizeof(ITEM *)); */
-  /* for(int i = 0; i < n_victims -1; ++i){ */
-  /*   items[i] = new_item(itoa(i+1), victims[i]); */
-  /* } */
-
-  /* // create menu of victim machines */
-  /* menu = new_menu((ITEM **)items); */
-
-
-  n_victims = net_get_victim_count();
+  n_victims = ARRAY_SIZE(victims);
   items = (ITEM **)calloc(n_victims, sizeof(ITEM *));
-  ncurses_item_victims(items);
+  for(int i = 0; i < n_victims -1; ++i){
+    items[i] = new_item(itoa(i+1), victims[i]);
+  }
+
+  // create menu of victim machines
   menu = new_menu((ITEM **)items);
+
+
+  /* n_victims = net_get_victim_count(); */
+  /* items = (ITEM **)calloc(n_victims, sizeof(ITEM *)); */
+  /* ncurses_item_victims(items); */
+  /* menu = new_menu((ITEM **)items); */
   
 
   // create menu window
@@ -309,10 +309,6 @@ bool ncurses_main(){
       ncurses_window_border(win_main);
       ncurses_window_title(win_main, win_main_title);
       ncurses_window_footer(win_main, "|0.9b|");
-      n_victims = net_get_victim_count();
-      items = (ITEM **)calloc(n_victims, sizeof(ITEM *));
-      ncurses_item_victims(items);
-      menu = new_menu((ITEM **)items);
       ncurses_window_victims(win_main,
                              menu,
                              win_menu,
@@ -325,20 +321,17 @@ bool ncurses_main(){
       wrefresh(win_menu);
       break;
     case KEY_DOWN:
+      mvprintw(1, 1, "[+] victims: %d\n", NET_VICTIMS_TOTAL);
       menu_driver(menu, REQ_DOWN_ITEM);
       wrefresh(win_menu);
+      wrefresh(win_main);
       break;
     case KEY_UP:
       menu_driver(menu, REQ_UP_ITEM);
       wrefresh(win_menu);
       break;
     }
-    n_victims = net_get_victim_count();
-    items = (ITEM **)calloc(n_victims, sizeof(ITEM *));
-    ncurses_item_victims(items);
-    menu = new_menu((ITEM **)items);
   }	
-
   ncurses_menu_cleanup(menu);
   ncurses_item_cleanup(items, n_victims);
   endwin();
