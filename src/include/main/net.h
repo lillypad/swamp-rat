@@ -87,6 +87,7 @@ bool net_remove_victims(net_client_beacon_t *p_victim){
     if (p_victims[i]->sysinfo.username == p_victim->sysinfo.username &&
         p_victims[i]->sysinfo.ip == p_victim->sysinfo.ip){
       memset(p_victims[i], 0, sizeof(net_client_beacon_t));
+      net_update_victim_count();
       return true;
     }
   }

@@ -27,6 +27,8 @@
 
 #define ARRAY_SIZE(a)(sizeof(a) / sizeof(a[0]))
 
+WINDOW *win_menu, *win_main;
+
 char *itoa(int x){
   /*
     :TODO: integer to (char *)
@@ -204,6 +206,27 @@ bool ncurses_window_victims(WINDOW *win_main,
   return true;
 }
 
+#ifndef NCURSES_REFRESH_DELAY
+#define NCURSES_REFRESH_DELAY 1000
+#endif
+
+void *ncurses_pthread_update_timer(){
+  int n_victims = NET_VICTIMS_TOTAL;
+  while (true){
+    mvprintw(1, 1, "[+] victims: %d\n", NET_VICTIMS_TOTAL);
+    refresh();
+    wrefresh(win_main);
+    if (n_victims != NET_VICTIMS_TOTAL){
+      mvprintw(1, 1, "[+] victims: %d\n", NET_VICTIMS_TOTAL);
+      refresh();
+      wrefresh(win_main);
+      wrefresh(win_menu);
+    }
+    sleep(1);
+  }
+  pthread_exit(NULL);
+}
+
 bool ncurses_main(){
   /*
     :TODO: main ncurses interface
@@ -213,7 +236,6 @@ bool ncurses_main(){
   int x_margin, y_margin;
   ITEM **items;
   MENU *menu;
-  WINDOW *win_menu, *win_main;
   char win_main_title[] = "|Swamp RAT|";
   char win_menu_title[] = "V1c71m5";
 
@@ -274,6 +296,12 @@ bool ncurses_main(){
                          x_margin);
   wrefresh(win_menu);
 
+  pthread_t t_ncurses_pthread_update_timer;
+  if (pthread_create(&t_ncurses_pthread_update_timer, NULL, ncurses_pthread_update_timer, NULL)){
+    fprintf(stderr, "[x] %s\n", strerror(errno));
+    return false;
+  }
+
   n_victims = NET_VICTIMS_TOTAL;
   while(true){
     key = getch();
@@ -310,12 +338,6 @@ bool ncurses_main(){
       wrefresh(win_menu);
       wrefresh(win_main);
     }
-    if (n_victims != NET_VICTIMS_TOTAL){
-      mvprintw(1, 1, "[+] victims: %d\n", NET_VICTIMS_TOTAL);
-      refresh();
-      wrefresh(win_main);
-      wrefresh(win_menu);
-    }
   }
   
   ncurses_menu_cleanup(menu);
@@ -323,3 +345,5 @@ bool ncurses_main(){
   endwin();
   return true;
 }
+
+
