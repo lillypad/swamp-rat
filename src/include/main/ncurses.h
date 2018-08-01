@@ -28,6 +28,12 @@
 #define ARRAY_SIZE(a)(sizeof(a) / sizeof(a[0]))
 
 WINDOW *win_menu, *win_main;
+ITEM **items;
+MENU *menu;
+char win_main_title[] = "|Swamp RAT|";
+char win_menu_title[] = "V!cT!m5";
+int  x_margin = 4;
+int  y_margin = 2;
 
 char *itoa(int x){
   /*
@@ -98,15 +104,6 @@ bool ncurses_window_footer(WINDOW *win, char *footer){
 #ifndef NCURSES_MENU_WIN_COLOR
 #define NCURSES_MENU_WIN_COLOR 2
 #endif
-
-char *victims[] = {
-  "c3rb3ru5@192.168.0.1",
-  "1337h@x0r@192.168.0.2",
-  "nu11byt3@192.168.0.3",
-  "ubuntu@192.168.0.4",
-  "gentoo@192.168.0.5",
-  (char *)NULL,
-};
 
 void ncurses_print_menu_title(WINDOW *win,
                      int starty,
@@ -211,18 +208,37 @@ bool ncurses_window_victims(WINDOW *win_main,
 #endif
 
 void *ncurses_pthread_update_timer(){
+  int x, y;
   int n_victims = NET_VICTIMS_TOTAL;
+  mvprintw(1, 1, "[+] t0t@l v!cT!m5: %d\n", NET_VICTIMS_TOTAL);
+  refresh();
+  wrefresh(win_main);
+  wrefresh(win_menu);
   while (true){
-    mvprintw(1, 1, "[+] victims: %d\n", NET_VICTIMS_TOTAL);
-    refresh();
-    wrefresh(win_main);
     if (n_victims != NET_VICTIMS_TOTAL){
-      mvprintw(1, 1, "[+] victims: %d\n", NET_VICTIMS_TOTAL);
+      getmaxyx(win_main, y, x);
+      wclear(win_main);
+      wclear(win_menu);
+      mvprintw(1, 1, "[+] t0t@l v!cT!m5: %d\n", NET_VICTIMS_TOTAL);
+      ncurses_window_border(win_main);
+      ncurses_window_title(win_main, "|Swamp RAT|");
+      ncurses_window_footer(win_main, "|0.9b|");
+      items = (ITEM **)calloc(NET_VICTIMS_TOTAL, sizeof(ITEM *));
+      ncurses_item_victims(items);
+      menu = new_menu((ITEM **)items);
+      ncurses_window_victims(win_main,
+                             menu,
+                             win_menu,
+                             win_menu_title,
+                             4,
+                             2,
+                             y_margin,
+                             x_margin);
       refresh();
       wrefresh(win_main);
       wrefresh(win_menu);
+      n_victims = NET_VICTIMS_TOTAL;
     }
-    sleep(1);
   }
   pthread_exit(NULL);
 }
@@ -233,14 +249,6 @@ bool ncurses_main(){
     :returns: boolean
   */
   int x, y, key, n_victims;
-  int x_margin, y_margin;
-  ITEM **items;
-  MENU *menu;
-  char win_main_title[] = "|Swamp RAT|";
-  char win_menu_title[] = "V1c71m5";
-
-  x_margin = 4;
-  y_margin = 2;
 
   if(putenv("TERM=linux") != 0){
     fprintf(stderr, "[x] %s\n", strerror(errno));

