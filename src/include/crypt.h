@@ -19,6 +19,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdbool.h>
+#include <time.h>
 
 bool crypt_encrypt_xor(char *data,
                        int data_size,
@@ -54,6 +55,22 @@ bool crypt_encrypt_xor_all(char *data,
   return true;
 }
 
+bool crypt_decrypt_xor_all(char *data,
+                       int data_size,
+                       int key){
+  /*
+    :TODO: encrypt config data structure
+    :data: pointer to data structure
+    :data_size: size of the data
+    :key: xor integer key
+    :returns: boolean
+  */
+  for (int i = 0; i < data_size; i++){
+      data[i] = data[i]^key;
+  }
+  return true;
+}
+
 bool crypt_decrypt_xor(char *data,
                        int data_size,
                        int key){
@@ -70,4 +87,9 @@ bool crypt_decrypt_xor(char *data,
     }
   }
   return true;
+}
+
+int crypt_random_xor_key(){
+  srand(time(NULL));
+  return rand();
 }
