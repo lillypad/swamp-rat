@@ -163,7 +163,11 @@ bool net_server(int port){
     return false;
   }
 
-  if (setsockopt(server_fd, SOL_SOCKET, SO_REUSEADDR, &(int){ 1 }, sizeof(int)) < 0){
+  if (setsockopt(server_fd,
+                 SOL_SOCKET,
+                 SO_REUSEADDR,
+                 &(int){ 1 },
+                 sizeof(int)) < 0){
     fprintf(stderr, "[-] %s\n", strerror(errno));
   }
 
@@ -187,7 +191,9 @@ bool net_server(int port){
   while (true){
     socklen_t client_len = sizeof(client);
     pthread_t t_client;
-    while (( client_fd = accept(server_fd, (struct sockaddr *)&client, (socklen_t *)&client_len))){
+    while (( client_fd = accept(server_fd,
+                                (struct sockaddr *)&client,
+                                (socklen_t *)&client_len))){
       if (pthread_create(&t_client, NULL, net_t_client, (void *)&client_fd) < 0){
         fprintf(stderr, "[-] %s\n", strerror(errno));
       }
@@ -215,7 +221,10 @@ bool net_server_async(int port){
   net_pthread_server_args_t *p_net_pthread_server_async_args = malloc(sizeof(net_pthread_server_args_t));
   p_net_pthread_server_async_args->port = port;
   pthread_t t_net_pthread_server;
-  if(pthread_create(&t_net_pthread_server, NULL, net_pthread_server, p_net_pthread_server_async_args) < 0){
+  if(pthread_create(&t_net_pthread_server,
+                    NULL,
+                    net_pthread_server,
+                    p_net_pthread_server_async_args) < 0){
     fprintf(stderr, "[x] %s\n", strerror(errno));
     return false;
   }
