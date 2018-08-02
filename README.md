@@ -15,6 +15,12 @@ A `linux` RAT that lurks where others do not.
 
 I started this as most free `linux` RATs are done half hazardly in higher level languages.
 
+# Screenshots
+
+<p align="center">
+  <img src="https://github.com/lillypad/swamp-rat/raw/master/docs/img/swamp-rat.png" alt="Swamp RAT"/>
+</p>
+
 # Dependancies
 - [`libcurl`](https://curl.haxx.se/libcurl/)
 - [`libcurses`](http://tldp.org/HOWTO/NCURSES-Programming-HOWTO/)
