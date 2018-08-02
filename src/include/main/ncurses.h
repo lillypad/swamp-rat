@@ -261,7 +261,6 @@ bool ncurses_wmain(int action){
     box(win_main, 0, 0);
     ncurses_window_title(win_main, win_main_title);
     ncurses_window_footer(win_main, win_main_version);
-    free(items);
     items = (ITEM **)calloc(NET_VICTIMS_TOTAL, sizeof(ITEM *));
     ncurses_item_victims(items);
     menu = new_menu((ITEM **)items);
