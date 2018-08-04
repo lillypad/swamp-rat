@@ -37,7 +37,11 @@
 #endif
 
 #ifndef NET_MAX_RESPONSE_SIZE
-#define NET_MAX_RESPONSE_SIZE 1024
+#define NET_MAX_RESPONSE_SIZE 2960
+#endif
+
+#ifndef NET_MAX_DATA_SIZE
+#define NET_MAX_DATA_SIZE 1024
 #endif
 
 #ifndef NET_CLIENT_BEACON
@@ -53,6 +57,8 @@ typedef struct{
   int xor_key;
   bool status;
   int command;
+  char uuid[SYS_UUID_SIZE];
+  char data[NET_MAX_DATA_SIZE];
 } net_server_beacon_t;
 #define NET_SERVER_CMD_BEACON 0
 #endif

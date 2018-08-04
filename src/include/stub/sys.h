@@ -22,10 +22,10 @@
 #include <fcntl.h>
 #include <stdbool.h>
 #include <curl/curl.h>
+#include <uuid/uuid.h>
 #include <sys/utsname.h>
 #include <pwd.h>
 #include <errno.h>
-//#include "../net.h"
 
 #ifndef SYS_MEMORY
 struct sys_memory_t {
@@ -229,8 +229,20 @@ int sys_load_average(){
   }
 }
 
+#ifndef SYS_UUID_SIZE
+#define SYS_UUID_SIZE 37
+#endif
+
+bool sys_get_uuid(char *uuid){
+  uuid_t id;
+  uuid_generate(id);
+  uuid_unparse(id, uuid);
+  return true;
+}
+
 #ifndef SYS_INFO
 typedef struct{
+  char uuid[SYS_UUID_SIZE];
   char ip[SYS_PUBLIC_IP_SIZE];
   char username[SYS_USERNAME_SIZE];
   char hostname[SYS_HOSTNAME_SIZE];
@@ -248,6 +260,7 @@ sys_info_t *sys_info(){
   */
   sys_info_t *p_sys_info = malloc(sizeof(sys_info_t));
   p_sys_info->cpu_usage = sys_load_average();
+  sys_get_uuid(p_sys_info->uuid);
   sys_username(p_sys_info->username, SYS_USERNAME_SIZE);
   sys_public_ip(p_sys_info->ip);
   sys_arch(p_sys_info->arch, SYS_ARCH_SIZE);

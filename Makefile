@@ -17,8 +17,8 @@
 
 all:
 	mkdir -p bin/
-	gcc -v src/main.c -o bin/swamp-rat -pthread -lcurl -lncurses -lmenu
-	gcc -v src/stub.c -o bin/stub -pthread -lcurl
+	gcc -v src/main.c -o bin/swamp-rat -pthread -lcurl -lncurses -lmenu -luuid
+	gcc -v src/stub.c -o bin/stub -pthread -lcurl -luuid
 	objcopy bin/swamp-rat --add-section rodata=bin/stub
 	cp bin/swamp-rat swamp-rat
 

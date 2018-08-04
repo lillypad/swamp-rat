@@ -71,6 +71,10 @@ int main(int argc, char **argv){
   arguments.port = 4444;
   argp_parse(&argp, argc, argv, 0, 0, &arguments);
   ncurses_main();
-  //net_server(4444);
+  //net_client_beacon_t **p_victims = net_create_victims();
+  //net_server_async(4444, p_victims);
+  while (true){
+    sleep(5);
+  }
   return EXIT_FAILURE;
 }

