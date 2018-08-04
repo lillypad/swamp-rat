@@ -50,6 +50,30 @@ net_client_beacon_t **net_create_victims(){
   return v;
 }
 
+net_server_beacon_t **net_create_commands(){
+  int count = NET_MAX_CLIENTS;
+  net_server_beacon_t **v;
+  v = malloc(count * sizeof(net_server_beacon_t));
+  if (v == NULL){
+    fprintf(stderr, "[x] %s\n", strerror(errno));
+    exit(EXIT_FAILURE);
+  }
+  for (int i = 0; i < count; i++){
+    v[i] = NULL;
+  }
+  return v;
+}
+
+bool net_update_commands(char *uuid, net_server_beacon_t *command, net_server_beacon_t **commands){
+  for (int i = 0; i < NET_MAX_CLIENTS; i++){
+    if (commands[i] != NULL && (strcmp(commands[i]->uuid, uuid) == 0)){
+      commands[i] = command;
+      return i;
+    }
+  }
+  return true;
+}
+
 bool net_update_victim_count(net_client_beacon_t **p_victims){
   /*
     :TODO: update victim counter

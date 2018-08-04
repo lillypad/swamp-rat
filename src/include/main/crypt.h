@@ -21,7 +21,7 @@
 #include <stdbool.h>
 #include "../defs.h"
 
-bool crypt_encrypt_xor_config(char *data,
+bool crypt_encrypt_xor_config(void *data,
                        int data_size,
                        int key){
   /*
@@ -39,7 +39,7 @@ bool crypt_encrypt_xor_config(char *data,
   return true;
 }
 
-bool crypt_decrypt_xor_config(char *data,
+bool crypt_decrypt_xor_config(void *data,
                        int data_size,
                        int key){
    /*
