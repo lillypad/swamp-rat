@@ -288,6 +288,7 @@ bool ncurses_wmain(int action, net_client_beacon_t **p_victims){
     wresize(win_menu, (y - (y_margin * 2)), (x - (x_margin * 2)));
     set_menu_win(menu, win_menu);
     set_menu_sub(menu, derwin(win_menu, (y - (y_margin * 2) - 4), (x - (x_margin *2) - 4), 3, 1));
+    set_menu_format(menu, (y - (y_margin * 2) - 4), 1);
     set_menu_mark(menu, " -> ");
     box(win_menu, 0, 0);
     ncurses_print_menu_title(win_menu, 1, 0, (x - (x_margin * 2)), win_menu_title);
@@ -352,8 +353,16 @@ bool ncurses_main(){
       menu_driver(menu, REQ_DOWN_ITEM);
       wrefresh(win_menu);
     }
+    if (key == KEY_NPAGE){
+      menu_driver(menu, REQ_SCR_DPAGE);
+      wrefresh(win_menu);
+    }
     if (key == KEY_UP){
       menu_driver(menu, REQ_UP_ITEM);
+      wrefresh(win_menu);
+    }
+    if (key == KEY_PPAGE){
+      menu_driver(menu, REQ_SCR_UPAGE);
       wrefresh(win_menu);
     }
   }
