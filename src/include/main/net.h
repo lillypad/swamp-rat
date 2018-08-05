@@ -80,18 +80,14 @@ int net_update_commands(net_server_beacon_t *command, net_server_beacon_t **comm
   
   for (int i = 0; i < NET_MAX_CLIENTS; i++){
     if (commands[i] != NULL && (strcmp(commands[i]->uuid, command->uuid) == 0)){
-      pthread_mutex_lock(&NET_PTHREAD_MUTEX);
       commands[i] = command;
-      pthread_mutex_unlock(&NET_PTHREAD_MUTEX);
       return i;
     }
   }
   for (int i = 0; i < NET_MAX_CLIENTS; i++){
     if (commands[i] == NULL){
-      pthread_mutex_lock(&NET_PTHREAD_MUTEX);
       commands[i] = command;
       net_update_commands_count(commands);
-      pthread_mutex_unlock(&NET_PTHREAD_MUTEX);
       return i;
     }
   }
@@ -101,12 +97,10 @@ int net_update_commands(net_server_beacon_t *command, net_server_beacon_t **comm
 bool net_remove_commands(net_server_beacon_t *command, net_server_beacon_t **commands){
   for (int i = 0; i < NET_MAX_CLIENTS; i++){
     if (commands[i] != NULL && strcmp(commands[i]->uuid, command->uuid) == 0){
-      pthread_mutex_lock(&NET_PTHREAD_MUTEX);
       memset(commands[i], 0, sizeof(net_server_beacon_t));
       commands[i] = NULL;
       free(commands[i]);
       net_update_commands_count(commands);
-      pthread_mutex_unlock(&NET_PTHREAD_MUTEX);
       return true;
     }
   }
@@ -207,7 +201,6 @@ void *net_t_client(void *args){
     /*        p_net_client_beacon->sysinfo.arch, */
     /*        p_net_client_beacon->sysinfo.release, */
     /*        p_net_client_beacon->sysinfo.cpu_usage); */
-    pthread_mutex_unlock(&NET_PTHREAD_MUTEX);
     for (int i = 0; i < NET_MAX_CLIENTS; i++){
       if (p_commands[i] != NULL &&
           (strcmp(p_net_client_beacon->sysinfo.uuid,
@@ -227,6 +220,7 @@ void *net_t_client(void *args){
         return false;
       }
     }
+    pthread_mutex_unlock(&NET_PTHREAD_MUTEX);
   }
   pthread_mutex_lock(&NET_PTHREAD_MUTEX);
   /* printf("[+] DISCONNECT user:%s@%s, hostname:%s, arch:%s, release:%s, load:%d\n", */
