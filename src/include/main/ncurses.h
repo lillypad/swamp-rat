@@ -330,6 +330,20 @@ void *ncurses_pthread_refresh(void *args){
   pthread_exit(NULL);
 }
 
+#ifndef NCURSES_PTHREAD_UPDATE_COMMANDS
+typedef struct{
+  net_server_beacon_t *command;
+  net_server_beacon_t **p_commands;
+} ncurses_pthread_update_commands_args_t;
+#define NCURSES_PTHREAD_UPDATE_COMMANDS
+#endif 
+
+void *ncurses_pthread_update_commands(void *args){
+  ncurses_pthread_update_commands_args_t *p_args = args;
+  net_update_commands(p_args->command, p_args->p_commands);
+  pthread_exit(NULL);
+}
+
 bool ncurses_main(){
   /*
     :TODO: main ncurses interface
@@ -380,12 +394,16 @@ bool ncurses_main(){
       char uuid[SYS_UUID_SIZE];
       item = current_item(menu);
       strncpy(uuid, item_name(item), SYS_UUID_SIZE);
-      net_server_beacon_t *p_net_server_beacon = malloc(sizeof(net_server_beacon_t));
-      p_net_server_beacon->command = NET_SERVER_CMD_BEACON;
-      p_net_server_beacon->status = true;
-      strcpy(p_net_server_beacon->uuid, uuid);
-      strcpy(p_net_server_beacon->data, "TESTTESTTESTTEST");
-      net_update_commands(p_net_server_beacon, p_commands);
+      net_server_beacon_t *command = malloc(sizeof(net_server_beacon_t));
+      ncurses_pthread_update_commands_args_t *p_commands_args = malloc(sizeof(ncurses_pthread_update_commands_args_t));
+      command->command = NET_SERVER_CMD_BEACON;
+      command->status = true;
+      strcpy(command->uuid, uuid);
+      strcpy(command->data, "TESTTESTTESTTEST");
+      p_commands_args->command = command;
+      p_commands_args->p_commands = p_commands;
+      pthread_t t_send_command;
+      pthread_create(&t_send_command, NULL, ncurses_pthread_update_commands, p_commands_args);
     }
   }
   ncurses_menu_cleanup(menu);
