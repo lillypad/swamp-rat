@@ -208,8 +208,6 @@ char *ncurses_victim_desc_1(char *s0, char *s1, char *s2, char *s3, char *s4, ch
 bool ncurses_item_victims(ITEM **items, net_client_beacon_t **p_victims){
   for(int i = 0; i < NET_MAX_CLIENTS; ++i){
     if (items[i] != NULL){
-      memset(items[i], 0, sizeof(ITEM));
-      items[i] = NULL;
       free_item(items[i]);
     }
     int j = 0;
