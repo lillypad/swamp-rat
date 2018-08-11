@@ -355,8 +355,6 @@ void *ncurses_pthread_wmain_update(void *args){
     :returns: NULL
   */
   ncurses_pthread_wmain_update_args_t *p_args = args;
-  int n_victims = 0;
-  int n_commands = 0;
   while (true){
     wclear(p_args->win_main);
     wclear(p_args->win_menu);
@@ -375,12 +373,11 @@ void *ncurses_pthread_wmain_update(void *args){
                          p_args->p_item_victims[NCURSES_WMENU_POS]);
       }
     } 
-    n_victims = NET_VICTIMS_TOTAL;
-    n_commands = NET_COMMANDS_TOTAL;
     wrefresh(p_args->win_main);
     wrefresh(p_args->win_menu);
     sleep(1);
   }
+  free(args);
   pthread_exit(NULL);
 }
 
@@ -463,6 +460,8 @@ bool ncurses_main(int port){
   ncurses_menu_free(p_menu_victims,
                     p_item_victims,
                     NET_MAX_CLIENTS);
+  net_cleanup_victims(p_victims);
+  net_cleanup_commands(p_commands);
   endwin();
   return true;
 }
