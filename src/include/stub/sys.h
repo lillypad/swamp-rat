@@ -122,6 +122,16 @@ bool sys_public_ip(char *public_ip){
   return true;
 }
 
+int sys_ping(){
+  char result[25];
+  FILE *fd = popen("ping -c 1 8.8.8.8 | grep -Po '(?<=time=)[0-9]{1,}'", "r");
+  memset(result, 0, 25);
+  fread(result, 1, 25, fd);
+  fclose(fd);
+  int ping = atoi(result);
+  return ping;
+}
+
 #ifndef SYS_USERNAME_SIZE
 #define SYS_USERNAME_SIZE 32
 #endif
@@ -249,6 +259,7 @@ typedef struct{
   char release[SYS_RELEASE_SIZE];
   char arch[SYS_ARCH_SIZE];
   int cpu_usage;
+  int ping;
 } sys_info_t;
 #define SYS_INFO
 #endif

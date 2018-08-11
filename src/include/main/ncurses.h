@@ -143,13 +143,14 @@ char *ncurses_victim_description(sys_info_t *sysinfo){
   */
   char *result;
   asprintf(&result,
-           "%s@%s arch:%s release:%s hostname:%s load:%d",
+           "%s@%s arch:%s release:%s hostname:%s load:%d ping:%d",
            sysinfo->username,
            sysinfo->ip,
            sysinfo->arch,
            sysinfo->release,
            sysinfo->hostname,
-           sysinfo->cpu_usage);
+           sysinfo->cpu_usage,
+           sysinfo->ping);
   return result;
 }
 
@@ -239,7 +240,7 @@ bool ncurses_wmain_update(WINDOW *win_main){
   char win_main_title[] = "|Swamp RAT|";
   char win_main_footer[] = "|lillypad|";
   char win_main_logo[] = "~~(__`*>";
-  char win_main_quote[] = "Fat3 cr33p5 l!k3 a r@t. - Elizabeth Bowen";
+  char win_main_quote[] = "\"Fate creeps like a rat.\" - Elizabeth Bowen";
   getmaxyx(win_main, y, x);
   wresize(win_main, y, x);
   box(win_main, 0, 0);
