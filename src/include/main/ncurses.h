@@ -399,7 +399,7 @@ void *ncurses_pthread_wmain_update(void *args){
                                                     p_args->win_menu,
                                                     p_args->p_item_victims,
                                                     p_args->p_victims);
-      if (NET_VICTIMS_TOTAL != 0){
+      if (NET_VICTIMS_TOTAL > 0){
         if (NCURSES_WMENU_POS > (NET_VICTIMS_TOTAL - 1)){
           NCURSES_WMENU_POS = NET_VICTIMS_TOTAL - 1;
           set_current_item(p_args->p_menu_victims,
@@ -409,6 +409,7 @@ void *ncurses_pthread_wmain_update(void *args){
                            p_args->p_item_victims[NCURSES_WMENU_POS]);
         }
       }
+      
       wrefresh(p_args->win_main);
       wrefresh(p_args->win_menu);
     } 
@@ -439,7 +440,7 @@ bool ncurses_main(int port){
                                               win_menu,
                                               p_item_victims,
                                               p_victims);
-
+  
   wrefresh(win_main);
   wrefresh(win_menu);
 
@@ -499,11 +500,12 @@ bool ncurses_main(int port){
       NCURSES_PTHREAD_WMAIN_UPDATE_SUSPEND = true;
       ITEM *item;
       char uuid[SYS_UUID_SIZE];
-      if (NET_VICTIMS_TOTAL == 1){
+      if (NCURSES_WMENU_POS == 0){
         p_menu_victims = ncurses_wmenu_update(win_main,
                                               win_menu,
                                               p_item_victims,
                                               p_victims);
+        set_current_item(p_menu_victims, p_item_victims[0]);
       }
       item = current_item(p_menu_victims);
       strncpy(uuid, item_name(item), SYS_UUID_SIZE);
