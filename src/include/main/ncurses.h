@@ -374,6 +374,10 @@ int ncurses_wcmd_select(WINDOW *win_main, WINDOW *win_menu, char *uuid){
   return -1;
 }
 
+static void ncurses_pthread_cleanup(void *args){
+  pthread_detach((pthread_t)args);
+}
+
 bool NCURSES_PTHREAD_WMAIN_UPDATE_SUSPEND = false;
 
 typedef struct{
@@ -390,7 +394,9 @@ void *ncurses_pthread_wmain_update(void *args){
     :TODO: pthread to update main window/menu on new connections or command queue
     :returns: NULL
   */
+  pthread_t id = pthread_self();
   ncurses_pthread_wmain_update_args_t *p_args = args;
+  pthread_cleanup_push(ncurses_pthread_cleanup, &id);
   while (true){
     if (NCURSES_PTHREAD_WMAIN_UPDATE_SUSPEND == false){
       wclear(p_args->win_main);
@@ -417,6 +423,7 @@ void *ncurses_pthread_wmain_update(void *args){
     sleep(1);
   }
   free(args);
+  pthread_cleanup_pop(0);
   pthread_exit(NULL);
 }
 
@@ -446,6 +453,9 @@ bool ncurses_main(int port){
   wrefresh(win_menu);
 
   pthread_t t_ncurses_pthread_wmain_update;
+  pthread_attr_t pthread_attr_detached;
+  pthread_attr_init(&pthread_attr_detached);
+  pthread_attr_setdetachstate(&pthread_attr_detached, PTHREAD_CREATE_DETACHED);
   ncurses_pthread_wmain_update_args_t *p_ncurses_pthread_wmain_update_args = malloc(sizeof(ncurses_pthread_wmain_update_args_t));
   p_ncurses_pthread_wmain_update_args->win_main = win_main;
   p_ncurses_pthread_wmain_update_args->win_menu = win_menu;
@@ -454,7 +464,7 @@ bool ncurses_main(int port){
   p_ncurses_pthread_wmain_update_args->p_item_victims = p_item_victims;
   p_ncurses_pthread_wmain_update_args->p_menu_victims = p_menu_victims;
   pthread_create(&t_ncurses_pthread_wmain_update,
-                 NULL,
+                 &pthread_attr_detached,
                  ncurses_pthread_wmain_update,
                  p_ncurses_pthread_wmain_update_args);
 
@@ -526,6 +536,7 @@ bool ncurses_main(int port){
   }
   endwin();
   printf("leaving the swamp!\n");
+  pthread_attr_destroy(&pthread_attr_detached);
   ncurses_menu_free(p_menu_victims,
                     p_item_victims,
                     NET_MAX_CLIENTS);
