@@ -74,6 +74,7 @@ int main(int argc, char **argv){
   struct arguments arguments;
   arguments.port = 4444;
   argp_parse(&argp, argc, argv, 0, 0, &arguments);
-  ncurses_main(4444);
+  int port = arguments.port;
+  ncurses_main(port);
   return EXIT_FAILURE;
 }

