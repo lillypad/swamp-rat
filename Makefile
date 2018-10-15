@@ -34,6 +34,7 @@ docs:
 		rm -f *.out && \
 		rm -f *.nav && \
 		rm -f *.snm && \
+		rm -f *.vrb && \
 		rm -rf _minted-swamp-rat/ 
 
 clean:
