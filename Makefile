@@ -15,12 +15,26 @@
 # along with this program.  If not, see <https://www.gnu.org/licenses/>. #
 ##########################################################################
 
+.PHONY: docs
+
 all:
 	mkdir -p bin/
 	gcc -Wall -Werror -g -v src/main.c -o bin/swamp-rat -pthread -lcurl -lncurses -lform -lmenu -luuid
 	gcc -v src/stub.c -o bin/stub -pthread -lcurl -luuid
 	objcopy bin/swamp-rat --add-section rodata=bin/stub
 	cp bin/swamp-rat swamp-rat
+
+docs:
+	cd docs/ && \
+		pdflatex -shell-escape swamp-rat.tex && \
+		pdflatex -shell-escape swamp-rat.tex && \
+		rm -f *.log && \
+		rm -f *.aux && \
+		rm -f *.toc && \
+		rm -f *.out && \
+		rm -f *.nav && \
+		rm -f *.snm && \
+		rm -rf _minted-swamp-rat/ 
 
 clean:
 	rm -f swamp-rat

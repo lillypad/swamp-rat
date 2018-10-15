@@ -1,0 +1,277 @@
+% Swamp RAT
+% Copyright (C) 2018  Lilly Chalupowski
+
+% This program is free software: you can redistribute it and/or modify
+% it under the terms of the GNU General Public License as published by
+% the Free Software Foundation, either version 3 of the License, or
+% (at your option) any later version.
+
+% This program is distributed in the hope that it will be useful,
+% but WITHOUT ANY WARRANTY; without even the implied warranty of
+% MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+% GNU General Public License for more details.
+
+% You should have received a copy of the GNU General Public License
+% along with this program.  If not, see <https://www.gnu.org/licenses/>.
+
+\documentclass[aspectratio=169]{beamer}
+\usepackage{tabularx}
+\usepackage{graphicx}
+\usepackage{eso-pic}
+\usepackage{minted}
+\usepackage{hyperref}
+\usepackage{tcolorbox}
+
+\makeatletter
+\newenvironment{myitemize}{%
+  \setlength{\topsep}{0pt}
+  \setlength{\partopsep}{0pt}
+  \renewcommand*{\@listi}{\leftmargin\leftmargini \parsep\z@ \topsep\z@ \itemsep\z@}
+  \let\@listI\@listi
+  \itemize
+}{\enditemize}
+\makeatother
+
+\graphicspath{{img/}}
+
+\usetheme{Warsaw}
+\usemintedstyle{monokai}
+
+\setbeamercolor{normal text}{fg=white,bg=black!90}
+\setbeamercolor{structure}{fg=white}
+\setbeamercolor{alerted text}{fg=red!85!black}
+\setbeamercolor{item projected}{use=item,fg=black,bg=item.fg!35}
+\setbeamercolor*{palette primary}{use=structure,fg=structure.fg}
+\setbeamercolor*{palette secondary}{use=structure,fg=structure.fg!95!black}
+\setbeamercolor*{palette tertiary}{use=structure,fg=structure.fg!90!black}
+\setbeamercolor*{palette quaternary}{use=structure,fg=structure.fg!95!black,bg=black!80}
+\setbeamercolor*{framesubtitle}{fg=white}
+\setbeamercolor*{block title}{parent=structure,bg=black!60}
+\setbeamercolor*{block body}{fg=black,bg=black!10}
+\setbeamercolor*{block title alerted}{parent=alerted text,bg=black!15}
+\setbeamercolor*{block title example}{parent=example text,bg=black!15}
+\setbeamertemplate{navigation symbols}{}
+\setbeamercolor{footercolor}{fg=white,bg=black}
+
+\makeatletter
+\defbeamertemplate*{footline}{myfootline}
+{
+  \leavevmode%
+  \hbox{%
+    \begin{beamercolorbox}[wd=.333333\paperwidth,ht=2.25ex,dp=1ex,center]{footercolor}%
+      \insertshorttitle
+    \end{beamercolorbox}%
+    \begin{beamercolorbox}[wd=.333333\paperwidth,ht=2.25ex,dp=1ex,center]{footercolor}%
+      \insertshortauthor\expandafter\beamer@ifempty\expandafter{\beamer@shortinstitute}{}{~~(\insertshortinstitute)}
+    \end{beamercolorbox}%
+    \begin{beamercolorbox}[wd=.333333\paperwidth,ht=2.25ex,dp=1ex,right]{footercolor}%
+      \insertshortdate{}\hspace*{2em}
+      \insertframenumber{} / \inserttotalframenumber\hspace*{2ex} 
+    \end{beamercolorbox}}%
+  \vskip0pt%
+}
+\makeatother
+
+\title{Don't RAT Me OUT!}
+
+\institute{GoSecure}
+\author{Lilly Chalupowski}
+\date{October 29, 2018}
+
+\begin{document}
+
+\setbeamertemplate{footline}{}
+\begin{frame}[t]
+  \begin{center}
+    \begingroup
+    \fontsize{20pt}{20pt}\selectfont
+    \inserttitle \\
+    \endgroup
+    \bigskip
+    \includegraphics[scale=0.48]{wikileaks} \\
+    \bigskip
+    \insertauthor \\
+    \insertdate
+  \end{center}
+\end{frame}
+
+\setbeamertemplate{footline}[myfootline]
+
+\begin{frame}
+  \frametitle{whois lilly.chalupowski}
+  \begin{table}
+    \caption{\textit{who.is results}}
+    \begin{tabularx}{\textwidth}{|X|X|}
+      \hline
+      Name & Lilly Chalupowski \\
+      \hline
+      Status & Employed \\
+      \hline
+      Creation Date & 1986/11/29 \\
+      \hline
+      Expiry & A Long Time from Now \\
+      \hline
+      Registrant Name & GoSecure \\
+      \hline
+      Administrative contact & Travis Barlow \\
+      \hline
+      Job & Security Application Developer - Threat Intelligence \\
+      \hline
+    \end{tabularx}
+  \end{table}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Agenda}
+  \framesubtitle{What will we cover?}
+  \begin{itemize}
+  \item{Disclaimer}
+  \item{What is a RAT?}
+  \item{Brief History of the RAT}
+  \item{Why build a RAT?}
+  \item{The Laboratory RAT}
+    \begin{itemize}
+    \item{CnC Server}
+    \item{Victim Sessions}
+    \item{Command Queue}
+    \item{NCurses}
+    \end{itemize}
+  \item{Evasion}
+    \begin{itemize}
+    \item{NIDS/NIPS}
+    \item{Debugging}
+    \item{Virtual Machines}
+    \end{itemize}
+  \item{POC / Demo / Questions}
+  \end{itemize}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Disclaimer}
+  \framesubtitle{Don't be a Criminal}
+  \begin{tcolorbox}[title=disclaimer.log,colback=gray]
+    The tools and techniques covered in this presentation can be dangerous and are\\
+    being shown for educational purposes.\\
+    \newline
+    It is a violation of Federal laws to attempt gaining unauthorized access to information, assets or systems belonging to others, or to exceed authorization on systems for which you have not been granted.\\
+    \newline
+    Only use these tools with/on systems you own or have written permission from the owner. I (the speaker) do not assume any responsibility and shall not be held liable for any illegal use of these tools.\\
+  \end{tcolorbox}
+\end{frame}
+
+\begin{frame}
+  \frametitle{What is a RAT?}
+  \begin{center}
+    \includegraphics[width=5cm,keepaspectratio]{question_mark}
+  \end{center}
+\end{frame}
+
+\begin{frame}
+  \frametitle{What is a RAT?}
+  \framesubtitle{The Animal}
+  \begin{center}
+    \begin{figure}
+      \includegraphics[width=5cm,keepaspectratio]{rat_animal}
+      \caption{Army RAT!}
+    \end{figure}
+  \end{center}
+\end{frame}
+
+\begin{frame}
+  \frametitle{What is a RAT}
+  \framesubtitle{The Tool}
+  \begin{center}
+    \begin{figure}
+      \includegraphics[width=14cm,keepaspectratio]{rat_tool}
+      \caption{Swamp RAT}
+    \end{figure}
+  \end{center}
+\end{frame}
+
+\begin{frame}
+  \frametitle{History of the RAT}
+  \begin{center}
+    \includegraphics[width=11cm,keepaspectratio]{history}
+  \end{center}
+\end{frame}
+
+\begin{frame}
+  \frametitle{History of the RAT}
+  \framesubtitle{System Administrators}
+  \begin{itemize}
+  \item{Central management}
+  \item{Supporting larger user base}
+  \item{Fixing issues remotely}
+  \item{Solved user issues issues}
+  \end{itemize}
+\end{frame}
+
+\begin{frame}
+  \frametitle{History of the RAT}
+  \framesubtitle{Well that Escalated Quickly}
+  \begin{center}
+    \includegraphics[width=6.5cm,keepaspectratio]{escalated_quickly_rat}
+  \end{center}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Why Build a RAT?}
+  \begin{center}
+    \begin{figure}
+      \includegraphics[width=12cm,keepaspectratio]{hackers_meme}
+      \caption{Hackers IRL}
+    \end{figure}
+  \end{center}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Why Build a RAT?}
+  \framesubtitle{Because Linux}
+  \begin{itemize}
+  \item{Linux}
+  \item{C Programming Language}
+  \item{Learning Experience}
+  \item{Find Detection Limitations}
+  \item{Research the Linux Malware Ecosystem}
+  \item{It's Cool}
+  \item{Because I Can}
+  \end{itemize}
+\end{frame}
+
+\begin{frame}
+  \frametitle{The Laboratory RAT}
+  \begin{center}
+    \includegraphics[width=5cm,keepaspectratio]{lab_rat}
+  \end{center}
+\end{frame}
+
+\begin{frame}
+  \frametitle{CnC Server}
+  \framesubtitle{In the C Programming Language}
+  \begin{itemize}
+  \item{Sockets}
+    \begin{itemize}
+    \item{Create}
+    \item{Bind}
+    \item{Listen}
+    \item{Accept}
+    \item{Receive}
+    \item{Process}
+    \item{Send}
+    \end{itemize}
+  \item{PThreads}
+  \end{itemize}
+\end{frame}
+
+\begin{frame}
+  \frametitle{CnC Server}
+  \framesubtitle{It can be painful when written in C}
+  \begin{center}
+    \begin{figure}
+      \includegraphics[width=10cm,keepaspectratio]{everything_hurts}
+      \caption{Leslie Knope}
+    \end{figure}
+  \end{center}
+\end{frame}
+
+\end{document}
