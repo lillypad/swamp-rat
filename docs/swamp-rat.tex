@@ -468,7 +468,7 @@
 \end{frame}
 
 \begin{frame}
-  \frametitle{CnC Server}
+  \frametitle{Evasion}
   \framesubtitle{How can we thwart most NIDS/NIPS?}
   \begin{center}
     \begin{figure}
@@ -479,7 +479,7 @@
 \end{frame}
 
 \begin{frame}
-  \frametitle{CnC Server}
+  \frametitle{Evasion}
   \framesubtitle{First Hint}
   \begin{center}
     \includegraphics[width=10cm,keepaspectratio]{xor_gate}
@@ -487,7 +487,7 @@
 \end{frame}
 
 \begin{frame}
-  \frametitle{CnC Server}
+  \frametitle{Evasion}
   \framesubtitle{Second Hint}
   \begin{center}
     \includegraphics[width=5cm,keepaspectratio]{xor_truth_table}
@@ -495,7 +495,7 @@
 \end{frame}
 
 \begin{frame}[fragile]{}
-  \frametitle{CnC Server}
+  \frametitle{Evasion}
   \framesubtitle{The Function to Bypass Most NIDS/NIPS}
   \begin{center}
     \begin{tcolorbox}[title=net.c,colback=black]
@@ -527,7 +527,7 @@
 
 \begin{frame}
   \frametitle{CnC Server}
-  \framesubtitle{Because can detect this with Lua!}
+  \framesubtitle{But we can detect this with Lua!}
   \begin{itemize}
   \item{Suricata}
     \begin{itemize}
@@ -540,12 +540,43 @@
   \end{itemize}
 \end{frame}
 
+\begin{frame}[fragile]{}
+  \frametitle{Evasion}
+  \framesubtitle{Lua Script Example}
+  \begin{center}
+    \begin{tcolorbox}[title=alert.lua,colback=black]
+    \begin{minipage}{0.5\textwidth}
+      \begin{minted}[fontsize=\tiny]{lua}
+        function init (args)
+          local needs = {}
+          needs["http.request_line"] = tostring(true)
+          return needs
+        end
+
+        function match(args)
+          a = tostring(args["http.request_line"])
+            if #a > 0 then
+              if a:find("^POST%s+/.*%.php%s+HTTP/1.0$") then
+                return 1
+              end
+            end
+          return 0
+        end
+        return 0
+      \end{minted}
+    \end{minipage}
+    \end{tcolorbox}
+  \end{center}
+\end{frame}
+
 \begin{frame}
-  \frametitle{CnC Server}
-  \framesubtitle{Performance vs. Detection}
+  \frametitle{Evasion}
+  \framesubtitle{Performance:Detection}
   \begin{center}
     \includegraphics[width=14cm,keepaspectratio]{server_room_fire}
   \end{center}
 \end{frame}
+
+
 
 \end{document}
