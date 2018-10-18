@@ -577,6 +577,143 @@
   \end{center}
 \end{frame}
 
+\begin{frame}
+  \frametitle{Evasion}
+  \framesubtitle{The Debugger}
+  \begin{center}
+    \includegraphics[width=14cm,keepaspectratio]{debugger}
+  \end{center}
+\end{frame}
 
+\begin{frame}[fragile]{}
+  \frametitle{Evasion}
+  \framesubtitle{The Debugger}
+  \begin{center}
+    \begin{tcolorbox}[title=re.c,colback=black]
+    \begin{minipage}{0.5\textwidth}
+      \begin{minted}[fontsize=\tiny]{c}
+        bool re_ptrace(){
+          if (ptrace(PTRACE_TRACEME, 0, 1, 0) == -1){
+            return true;
+          } else{
+            return false;
+          }
+        }
+      \end{minted}
+    \end{minipage}
+    \end{tcolorbox}
+  \end{center}
+\end{frame}
+
+\begin{frame}[fragile]{}
+  \frametitle{Evasion}
+  \framesubtitle{The Virtual Machine 0}
+  \begin{center}
+    \begin{tcolorbox}[title=re.c,colback=black]
+    \begin{minipage}{0.5\textwidth}
+      \begin{minted}[fontsize=\tiny]{c}
+        bool re_kernel_module(char *kernel_module){
+          if (strlen(kernel_module) + 16 > RE_BASH_COMMAND_MAX_LEN){
+            fprintf(stderr, "[x] kernel module name length exceeds limitations\n");
+            return false;
+          }
+          char command[RE_BASH_COMMAND_MAX_LEN];
+          sprintf(command, "grep -Po '^%s\x20' /proc/modules", kernel_module);
+          FILE *fd = popen(command, "r");
+          if (fd == NULL){
+            fprintf(stderr, "[x] failed to read kernel module list");
+            return false;
+          }
+          char buff[RE_KERNEL_MODULE_NAME_MAX_SIZE];
+          memset(buff, 0, sizeof(buff));
+          fread(buff, 1, strlen(kernel_module), fd);
+          if (strncmp(buff, kernel_module, strlen(kernel_module)) == 0){
+            return true;
+          } else{
+            return false;
+          }
+        }
+      \end{minted}
+    \end{minipage}
+    \end{tcolorbox}
+  \end{center}
+\end{frame}
+
+\begin{frame}[fragile]{}
+  \frametitle{Evasion}
+  \framesubtitle{The Virtual Machine 1}
+  \begin{center}
+    \begin{tcolorbox}[title=re.c,colback=black]
+    \begin{minipage}{0.5\textwidth}
+      \begin{minted}[fontsize=\tiny]{c}
+        bool re_kernel_modules(){
+          if (re_kernel_module("virtio") == true){
+            return true;
+          } else if (re_kernel_module("vboxvideo") == true){
+            return true;
+          } else if (re_kernel_module("vboxguest") == true){
+            return true;
+          } else if (re_kernel_module("vboxsf") == true){
+            return true;
+          } else{
+            return false;
+          }
+        }
+      \end{minted}
+    \end{minipage}
+    \end{tcolorbox}
+  \end{center}
+\end{frame}
+
+\begin{frame}[fragile]{}
+  \frametitle{Evasion}
+  \framesubtitle{The Hypervisor}
+  \begin{center}
+    \begin{tcolorbox}[title=re.c,colback=black]
+    \begin{minipage}{0.5\textwidth}
+      \begin{minted}[fontsize=\tiny]{c}
+        bool re_hypervisor(){
+          char hypervisor[] = "hypervisor";
+          char command[] = "grep -m 1 -Po 'hypervisor' /proc/cpuinfo";
+          char buff[RE_KERNEL_MODULE_NAME_MAX_SIZE];
+          FILE *fd = popen(command, "r");
+          if (fd == NULL){
+            fprintf(stderr, "[x] failed to read cpuinfo");
+            return false;
+          }
+          memset(buff, 0, sizeof(buff));
+          fread(buff, 1, strlen(hypervisor), fd);
+          if (strncmp(buff, hypervisor, strlen(hypervisor)) == 0){
+            return true;
+          } else{
+            return false;
+          }
+        }
+      \end{minted}
+    \end{minipage}
+    \end{tcolorbox}
+  \end{center}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Stop, Demo Time!}
+  \begin{center}
+    \includegraphics[width=7cm,keepaspectratio]{demo_meme}
+  \end{center}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Questions}
+  \begin{center}
+    \includegraphics[width=7cm,keepaspectratio]{questions}
+  \end{center}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Questions}
+  \begin{center}
+    \includegraphics[width=12cm,keepaspectratio]{thank_you}
+  \end{center}
+\end{frame}
 
 \end{document}
