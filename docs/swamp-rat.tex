@@ -183,8 +183,8 @@
   \framesubtitle{The Tool}
   \begin{center}
     \begin{figure}
-      \includegraphics[width=14cm,keepaspectratio]{rat_tool}
-      \caption{Swamp RAT}
+      \includegraphics[width=10cm,keepaspectratio]{darkcomet_rat}
+      \caption{Darkcomet RAT}
     \end{figure}
   \end{center}
 \end{frame}
@@ -205,6 +205,17 @@
   \item{Fixing issues remotely}
   \item{Solved user issues issues}
   \end{itemize}
+\end{frame}
+
+\begin{frame}
+  \frametitle{History of the RAT}
+  \framesubtitle{To Support the Users}
+  \begin{center}
+    \begin{figure}
+      \includegraphics[width=9cm,keepaspectratio]{user_support}
+      \caption{This used to be my life...}
+    \end{figure}
+  \end{center}
 \end{frame}
 
 \begin{frame}
@@ -251,7 +262,7 @@
   \framesubtitle{NJRat CnC Code}
   \begin{center}
     \begin{figure}
-      \includegraphics[width=6cm,keepaspectratio]{njrat_cnc}
+      \includegraphics[width=5.8cm,keepaspectratio]{njrat_cnc}
       \caption{NJRat Decompiled CnC Code after Unpacking}
     \end{figure}
   \end{center}
@@ -421,16 +432,16 @@
       \begin{minted}[fontsize=\tiny]{c}
         #ifndef NET_SERVER_CMD_BEACON
         typedef struct{
-          int xor_key;
-          bool status;
-          int command;
-          char uuid[SYS_UUID_SIZE];
-          char data[NET_MAX_DATA_SIZE];
+          int xor_key;                   // XOR Key
+          bool status;                   // Status
+          int command;                   // Command
+          char uuid[SYS_UUID_SIZE];      // UUID
+          char data[NET_MAX_DATA_SIZE];  // Data
         } net_server_beacon_t;
         #define NET_SERVER_CMD_BEACON 0
         typedef struct{
-          char host[NET_DOMAIN_MAX];
-          int port;
+          char host[NET_DOMAIN_MAX];     // Host
+          int port;                      // Port
         } net_server_cmd_shell_t;
         #define NET_SERVER_CMD_SHELL 1
         #endif
@@ -670,6 +681,47 @@
   \end{center}
 \end{frame}
 
+\begin{frame}[fragile]{}
+  \frametitle{NCurses}
+  \framesubtitle{Create the menu window!}
+  \begin{center}
+    \begin{tcolorbox}[title=net.c,colback=black]
+    \begin{minipage}{0.5\textwidth}
+      \begin{minted}[fontsize=\tiny]{c}
+        bool ncurses_wmenu(WINDOW *win_main,                      // Pointer to Main Window
+                           WINDOW *win_menu,                      // Pointer to Menu Window
+                           char *win_menu_title){                 // Menu Title
+          int y, x;
+          getmaxyx(win_main, y, x);                               // Get Max X Y
+          wresize(win_menu, (y - y_margin), (x - x_margin));      // Resize Menu
+          box(win_menu, 0, 0);                                    // Menu Border
+          mvwprintw(win_menu,                                     // Print Menu Title
+                    1,                                            // Menu Y Value
+                    (x / 2) - (strlen(win_menu_title) / 2),       // Menu X Value
+                    "%s",                                         // Format String
+                    win_menu_title);                              // The Menu Title
+         mvwaddch(win_menu, 2, 0, ACS_LTEE);                      // Draw Lines to Complete Menu
+         mvwhline(win_menu, 2, 1, ACS_HLINE, (x - x_margin) - 2);
+         mvwaddch(win_menu, 2, (x - x_margin) - 1, ACS_RTEE);
+         return true;
+       }
+      \end{minted}
+    \end{minipage}
+    \end{tcolorbox}
+  \end{center}
+\end{frame}
+
+\begin{frame}
+  \frametitle{NCurses}
+  \framesubtitle{The Interface}
+  \begin{center}
+    \begin{figure}
+      \includegraphics[width=14cm,keepaspectratio]{rat_tool}
+      \caption{Swamp RAT}
+    \end{figure}
+  \end{center}
+\end{frame}
+
 \begin{frame}
   \frametitle{Evasion}
   \framesubtitle{How can we thwart most NIDS?}
@@ -721,7 +773,7 @@
 \end{frame}
 
 \begin{frame}
-  \frametitle{CnC Server}
+  \frametitle{Evasion}
   \framesubtitle{Clear Dataframe vs XOR Dataframe}
   \begin{center}
     \begin{figure}
@@ -732,7 +784,7 @@
 \end{frame}
 
 \begin{frame}
-  \frametitle{CnC Server}
+  \frametitle{Evasion}
   \framesubtitle{But Why?}
   \begin{center}
     \includegraphics[width=7cm,keepaspectratio]{but_why}
@@ -740,7 +792,7 @@
 \end{frame}
 
 \begin{frame}
-  \frametitle{CnC Server}
+  \frametitle{Evasion}
   \framesubtitle{But we can detect this with Lua!}
   \begin{itemize}
   \item{Suricata}
@@ -780,6 +832,41 @@
       \end{minted}
     \end{minipage}
     \end{tcolorbox}
+  \end{center}
+\end{frame}
+
+\begin{frame}[fragile]{}
+  \frametitle{Evasion}
+  \framesubtitle{Remember NJRat?}
+  \begin{center}
+    \begin{tcolorbox}[title=njrat.rules,colback=black]
+    \begin{minipage}{0.5\textwidth}
+      \begin{minted}[fontsize=\tiny]{c}
+        alert tcp any any -> \$EXTERNAL_NET any (
+          msg:"NJRat/Bladabindi APT-C-27 Variant CnC Beacon";
+          content:"medo2|2a 5f 5e|"; nocase; fast_pattern;
+          pcre:"/(inf|kl|msg|pl)medo2\x2a\x5f\x5e[a-z,0-9,\+\/,\=]{1,}/i";
+          flow:to_server,established;
+          reference:md5,382788bb234b75a35b80ac69cb7ba306;
+          reference:url,https://ti.360.net/blog/articles/analysis-of-apt-c-27;
+          classtype:trojan-activity;
+          sid:2000000;
+          rev:01;
+        )
+      \end{minted}
+    \end{minipage}
+    \end{tcolorbox}
+  \end{center}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Evasion}
+  \framesubtitle{Remember the TCP Dataframes?}
+  \begin{center}
+    \begin{figure}
+      \includegraphics[width=14cm,keepaspectratio]{tcp_xor_dataframe}
+      \caption{Find Fast Pattern Here?}
+    \end{figure}
   \end{center}
 \end{frame}
 
@@ -920,6 +1007,18 @@
     \end{minipage}
     \end{tcolorbox}
   \end{center}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Summary}
+  \framesubtitle{What did I learn}
+  \begin{itemize}
+  \item{TCP Socket Programming Sucks}
+  \item{Bypass NIDS with XOR TCP Dataframes}
+  \item{Anti-Debug / Anti-VM Linux Techniques}
+  \item{NCurses Looks Cool}
+  \item{Everything in Terminal is Better}
+  \end{itemize}
 \end{frame}
 
 \begin{frame}
