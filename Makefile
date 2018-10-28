@@ -16,8 +16,12 @@
 ##########################################################################
 
 .PHONY: docs
+.PHONY: build
+.PHONY: all
 
-all:
+all: build docs
+
+build:
 	mkdir -p bin/
 	gcc -Wall -Werror -g -v src/main.c -o bin/swamp-rat -pthread -lcurl -lncurses -lform -lmenu -luuid
 	gcc -v src/stub.c -o bin/stub -pthread -lcurl -luuid
