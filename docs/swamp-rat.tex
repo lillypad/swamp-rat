@@ -76,7 +76,7 @@
 
 \institute{GoSecure}
 \author{Lilly Chalupowski}
-\date{October 29, 2018}
+\date{October 30, 2018}
 
 \begin{document}
 
@@ -128,8 +128,8 @@
   \item{Disclaimer}
   \item{What is a RAT?}
   \item{Brief History of the RAT}
-  \item{Why build a RAT?}
   \item{Wild RATs}
+  \item{Why build a RAT?}
   \item{The Laboratory RAT}
     \begin{itemize}
     \item{CnC Server}
@@ -300,6 +300,166 @@
       \end{minted}
     \end{minipage}
     \end{tcolorbox}
+  \end{center}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Wild RATs}
+  \framesubtitle{Alibaba Malware Article - 6900bbd0b505126c4461ae21bb4cf85d}
+  \begin{center}
+    \begin{figure}
+      \includegraphics[width=9cm,keepaspectratio]{alibaba_article_0}
+      \caption{Alibaba Malware Article}
+    \end{figure}
+  \end{center}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Wild RATs}
+  \framesubtitle{Alibaba Malware Article CnC Analysis - 6900bbd0b505126c4461ae21bb4cf85d}
+  \begin{center}
+    \begin{figure}
+      \includegraphics[width=9cm,keepaspectratio]{alibaba_article_1}
+      \caption{Alibaba Malware Article Entire CnC Analysis}
+    \end{figure}
+  \end{center}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Wild RATs}
+  \framesubtitle{Alibaba Malware Article CnC Analysis - 6900bbd0b505126c4461ae21bb4cf85d}
+  \begin{center}
+    \begin{figure}
+      \includegraphics[width=9cm,keepaspectratio]{thats_all_you_got}
+      \caption{Seriously?}
+    \end{figure}
+  \end{center}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Wild RATs}
+  \framesubtitle{Alibaba Malware Analysis - What are we dealing with?}
+  \begin{center}
+    \begin{figure}
+      \includegraphics[width=9cm,keepaspectratio]{alibaba_die_main}
+      \caption{Alibaba Malware Detect It Easy}
+    \end{figure}
+  \end{center}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Wild RATs}
+  \framesubtitle{Alibaba Malware Analysis - Entropy}
+  \begin{center}
+    \begin{figure}
+      \includegraphics[width=9cm,keepaspectratio]{alibaba_die_entropy}
+      \caption{Alibaba Malware Entropy}
+    \end{figure}
+  \end{center}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Wild RATs}
+  \framesubtitle{Alibaba Malware Analysis - Debugging and Capturing}
+  \begin{center}
+    \begin{figure}
+      \includegraphics[width=14cm,keepaspectratio]{alibaba_cnc}
+      \caption{Afer Unpacking and Breaking on Send}
+    \end{figure}
+  \end{center}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Wild RATs}
+  \framesubtitle{Alibaba Malware Analysis - The CnC Beacon}
+  \begin{center}
+    \begin{figure}
+      \includegraphics[width=14cm,keepaspectratio]{alibaba_http}
+      \caption{The CnC Beacon}
+    \end{figure}
+  \end{center}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Wild RATs}
+  \framesubtitle{Alibaba Malware Analysis - When you see it...}
+  \begin{center}
+    \begin{figure}
+      \includegraphics[width=7cm,keepaspectratio]{whats_wrong_here}
+      \caption{When you see it...}
+    \end{figure}
+  \end{center}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Wild RATs}
+  \framesubtitle{Alibaba Malware Analysis - The CnC Beacon}
+  \begin{center}
+    \begin{figure}
+      \includegraphics[width=14cm,keepaspectratio]{alibaba_http}
+      \caption{The CnC Beacon}
+    \end{figure}
+  \end{center}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Wild RATs}
+  \framesubtitle{Alibaba Malware Analysis - The CnC Beacon}
+  \begin{center}
+    \begin{figure}
+      \includegraphics[width=14cm,keepaspectratio]{alibaba_http_highlight}
+      \caption{The CnC Beacon}
+    \end{figure}
+  \end{center}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Wild RATs}
+  \framesubtitle{Alibaba Malware Analysis - What?}
+  \begin{center}
+    \begin{figure}
+      \includegraphics[width=8cm,keepaspectratio]{what_are_you_doing}
+      \caption{Really?}
+    \end{figure}
+  \end{center}
+\end{frame}
+
+\begin{frame}[fragile]{}
+  \frametitle{Wild RATs}
+  \framesubtitle{Alibaba Malware}
+  \begin{center}
+    \begin{tcolorbox}[title=alibaba.rules,colback=black]
+    \begin{minipage}{0.5\textwidth}
+      \begin{minted}[fontsize=\tiny]{c}
+        alert http any any -> \$EXTERNAL_NET any (
+          msg:"Alibaba CnC Checkin";
+          content:"POST"; http_method;
+          content:"Content-type|3a 20|multipart/form-data|3b|boundary="; http_header; fast_pattern;
+          pcre:"/\:\d{1,5}/iH";
+          content:"Content-Disposition|3a 20|multipart/form-data|3b 20|name=|22|kind|22|";
+          content:"Content-Disposition|3a 20|multipart/form-data|3b 20|name=|22|fname|22 3b|";
+          content:"|be 02 00 00|BX|00 00 00|PV|9b 8a|U";
+          flow:to_server,established;
+          metadata:date 2018-10-16;
+          reference:url,http://sfkino.tistory.com/70;
+          classtype:trojan-activity;
+          sid:2000001;
+          rev:1;
+        )
+      \end{minted}
+    \end{minipage}
+    \end{tcolorbox}
+  \end{center}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Wild RATs}
+  \framesubtitle{They are good at teamwork!}
+  \begin{center}
+    \begin{figure}
+      \includegraphics[width=7cm,keepaspectratio]{team_work}
+      \caption{Go Team!}
+    \end{figure}
   \end{center}
 \end{frame}
 
