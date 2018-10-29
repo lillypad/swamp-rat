@@ -88,7 +88,7 @@
     \inserttitle \\
     \endgroup
     \bigskip
-    \includegraphics[scale=0.48]{wikileaks} \\
+    \includegraphics[scale=0.45]{wikileaks} \\
     \bigskip
     \insertauthor \\
     \insertdate
@@ -427,6 +427,17 @@
 
 \begin{frame}
   \frametitle{Wild RATs}
+  \framesubtitle{Alibaba Malware Analysis - Demo Video}
+  \begin{center}
+    \begin{figure}
+      \includegraphics[width=8cm,keepaspectratio]{show_me_a_demo}
+      \caption{Show me a demo!}
+    \end{figure}
+  \end{center}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Wild RATs}
   \framesubtitle{Alibaba Malware Analysis - What?}
   \begin{center}
     \begin{figure}
@@ -452,10 +463,100 @@
           content:"Content-Disposition|3a 20|multipart/form-data|3b 20|name=|22|fname|22 3b|";
           content:"|be 02 00 00|BX|00 00 00|PV|9b 8a|U";
           flow:to_server,established;
-          metadata:date 2018-10-16;
           reference:url,http://sfkino.tistory.com/70;
           classtype:trojan-activity;
           sid:2000001;
+          rev:1;
+        )
+      \end{minted}
+    \end{minipage}
+    \end{tcolorbox}
+  \end{center}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Wild RATs}
+  \framesubtitle{PowerPool Malware Analysis}
+  \begin{center}
+    \begin{figure}
+      \includegraphics[width=7cm,keepaspectratio]{power_pool_meme}
+      \caption{PowerPool Malware}
+    \end{figure}
+  \end{center}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Wild RATs}
+  \framesubtitle{PowerPool Malware Analysis - 80e7a7789286d3fb69f083f1a2dddbe6}
+  \begin{center}
+    \begin{figure}
+      \includegraphics[width=14cm,keepaspectratio]{powerpool_article}
+      \caption{PowerPool Whitepaper Article}
+    \end{figure}
+  \end{center}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Wild RATs}
+  \framesubtitle{PowerPool Malware Analysis - 80e7a7789286d3fb69f083f1a2dddbe6}
+  \begin{center}
+    \begin{figure}
+      \includegraphics[width=6cm,keepaspectratio]{really_guy_all_you_got}
+      \caption{Really?}
+    \end{figure}
+  \end{center}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Wild RATs}
+  \framesubtitle{PowerPool Malware Analysis - 80e7a7789286d3fb69f083f1a2dddbe6}
+  \begin{center}
+    \begin{figure}
+      \includegraphics[width=9cm,keepaspectratio]{powerpool_anti_debug}
+      \caption{PowerPool Anti-Debug / Anti-Analysis}
+    \end{figure}
+  \end{center}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Wild RATs}
+  \framesubtitle{PowerPool Malware Analysis - 80e7a7789286d3fb69f083f1a2dddbe6}
+  \begin{center}
+    \begin{figure}
+      \includegraphics[width=6.5cm,keepaspectratio]{powerpool_main_thread}
+      \caption{PowerPool Main Thread}
+    \end{figure}
+  \end{center}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Wild RATs}
+  \framesubtitle{PowerPool Malware Analysis - Demo Video}
+  \begin{center}
+    \begin{figure}
+      \includegraphics[width=7cm,keepaspectratio]{demo_baby}
+      \caption{Demo Baby}
+    \end{figure}
+  \end{center}
+\end{frame}
+
+\begin{frame}[fragile]{}
+  \frametitle{Wild RATs}
+  \framesubtitle{PowerPool Malware Analysis - Detection}
+  \begin{center}
+    \begin{tcolorbox}[title=powerpool.rules,colback=black]
+    \begin{minipage}{0.5\textwidth}
+      \begin{minted}[fontsize=\tiny]{c}
+        alert http any any -> \$EXTERNAL_NET any (
+          msg:"PowerPool CnC Heartbeat Beacon";
+          content:"POST"; http_method;
+          content:"Content-Type|3a 20|application/x-www-form-urlencoded"; http_header; fast_pattern;
+          content:"/heart"; http_uri;
+          pcre:"/json\=\{\x0a\x20{1,}\x22sessionid\x22\x20{1,}\:\s{1,}
+                \x22\{[a-f,0-9]{8}\-[a-f,0-9]{4}\-[a-f,0-9]{4}\-
+                [a-f,0-9]{4}\-[a-f,0-9]{12}\}\x22\x0a\}/iP";
+          reference:url,https://www.welivesecurity.com/2018/09/05/powerpool-malware-exploits-zero-day-vulnerability/;
+          sid:2000002;
           rev:1;
         )
       \end{minted}
@@ -1336,6 +1437,17 @@
 
 \begin{frame}
   \frametitle{Anyone else doing it right?}
+  \framesubtitle{Fancy Bear Analysis - Unpacking Demo}
+  \begin{center}
+    \begin{figure}
+      \includegraphics[width=9cm,keepaspectratio]{demo_serious}
+      \caption{It's getting serious!}
+    \end{figure}
+  \end{center}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Anyone else doing it right?}
   \framesubtitle{Fancy Bear Analysis - Doing it Right!}
   \begin{center}
     \begin{figure}
@@ -1358,9 +1470,17 @@
 \end{frame}
 
 \begin{frame}
-  \frametitle{Stop, Demo Time!}
+  \frametitle{Swamp RAT Demo}
   \begin{center}
     \includegraphics[width=7cm,keepaspectratio]{demo_meme}
+  \end{center}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Anyone else doing it right?}
+  \framesubtitle{Buy my malware?}
+  \begin{center}
+    \includegraphics[width=5.5cm,keepaspectratio]{malware_the_rock_meme}
   \end{center}
 \end{frame}
 
@@ -1368,6 +1488,26 @@
   \frametitle{Questions}
   \begin{center}
     \includegraphics[width=7cm,keepaspectratio]{questions}
+  \end{center}
+\end{frame}
+
+\begin{frame}
+  \frametitle{References}
+  \begin{center}
+    \begin{itemize}
+    \item{\href{https://en.wikipedia.org/wiki/Main_Page}{Wikipedia}}
+    \item{\href{https://ti.360.net/blog/articles/analysis-of-apt-c-27/}{NJRat Article}}
+    \item{\href{https://www.virustotal.com/\#/file/0a9c88d03260b92608c9c079a1b449cf46e5cd764f12f2ec852038dd6bd0fa97/detection}{NJRat Sample}}
+    \item{\href{https://www.virustotal.com/\#/file/4e51a6779a7776055ebdeffe28d00e8866b2e722e3ccb6cba868cf8cdc86b1a3/detection}{NJRat Unpacked Sample}}
+    \item{\href{http://sfkino.tistory.com/70}{Alibaba Malware Article}}
+    \item{\href{https://www.virustotal.com/\#/file/d057088d0de3d920ea0939217c756274018b6e89cbfc74f66f50a9d27a384b09/detection}{Alibaba Malware Sample}}
+    \item{\href{https://www.welivesecurity.com/2018/09/05/powerpool-malware-exploits-zero-day-vulnerability/}{PowerPool Malware Article}}
+    \item{\href{https://www.virustotal.com/\#/file/58a50840c04cd15f439f1cc1b684e9f9fa22c0d64f44a391d9e2b1222e5cd6bd/details}{PowerPool Malware Sample}}
+    \item{\href{https://www.virustotal.com/\#/file/9c08136b26ee5234c61a5d9e5a17afb15da35efc66514d2df5b53178693644c5/detection}{PowerPool Malware Sample Patched Version}}
+    \item{\href{https://www.symantec.com/security-center/writeup/2018-092116-1134-99?om_rssid=sr-latestthreats30days\#technicaldescription}{FancyBear APT Article}}
+    \item{\href{https://www.virustotal.com/\#/file/a37eda810ca92486bfb0e1f1b27adb7c9df57aafab686c000ae1d6ec5d6f6180/detection}{FancyBear APT Sample}}
+    \item{\href{https://www.virustotal.com/\#/file/90e7c99effc7e4360c45a2af7ca9cc23313902a40c30d48cac8db048e9e4c0f6/detection}{FancyBear APT Unpacked .NET Assembly}}
+    \end{itemize}
   \end{center}
 \end{frame}
 
